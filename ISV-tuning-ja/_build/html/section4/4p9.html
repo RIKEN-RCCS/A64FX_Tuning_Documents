@@ -1,0 +1,149 @@
+
+
+<!doctype html>
+
+<html lang="ja" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>4.9. 最適化制御行を使わないループ展開 &#8212;   ドキュメント</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="../_static/bizstyle.css?v=532c1bf3" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=89e52957" />
+    
+    <script src="../_static/documentation_options.js?v=c033477b"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/translations.js?v=4dbe4bdc"></script>
+    <script src="../_static/bizstyle.js"></script>
+    <link rel="search" title="検索" href="../search.html" />
+    <link rel="next" title="4.10. 2次元配列のメモリ配置改善" href="4p10.html" />
+    <link rel="prev" title="4.8. ループ外への不変式の移動" href="4p8.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="4p10.html" title="4.10. 2次元配列のメモリ配置改善"
+             accesskey="N">次へ</a></li>
+        <li class="right" >
+          <a href="4p8.html" title="4.8. ループ外への不変式の移動"
+             accesskey="P">前へ</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  ドキュメント</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U"><span class="section-number">4. </span>チューニング項目</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.9. </span>最適化制御行を使わないループ展開</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="p9">
+<span id="id1"></span><h1><span class="section-number">4.9. </span>最適化制御行を使わないループ展開<a class="headerlink" href="#p9" title="Link to this heading">¶</a></h1>
+<section id="id2">
+<span id="id3"></span><h2><span class="section-number">4.9.1. </span>チューニング対象<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>本節で対象とした calc_function_4 関数は、「システム方程式マトリクス計算」の計測区間に含まれ、チューニング実施前のアプリケーション全体の約1.0％のコストを占めている関数です。本関数は「システム方程式マトリクス計算」に含まれる関数の中では、4番目にコストが高い関数です。</p>
+</section>
+<section id="id4">
+<span id="id5"></span><h2><span class="section-number">4.9.2. </span>分析<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>calc_function_4 関数を分析した結果、下記のループに着目しました。このループの特徴は以下の通りです。</p>
+<ul class="simple">
+<li><p>ソースコード抜粋の①ループの外にある if 文（既に実施したチューニング項目で追加）により、①ループの回転数は5であることが明示され、ループ展開されました。対して、②のループは①ループと異なり展開されませんでした。</p></li>
+</ul>
+<p>[チューニング実施前の calc_function_4 関数のソースコード抜粋]</p>
+<p><a class="reference internal" href="../_images/image24.png"><img alt="image24" src="../_images/image24.png" style="width: 584.25px; height: 341.25px;" /></a></p>
+</section>
+<section id="id6">
+<span id="id7"></span><h2><span class="section-number">4.9.3. </span>実施<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<p>分析結果を踏まえて、以下のチューニングを実施しました。</p>
+<ul class="simple">
+<li><p>命令スケジューリング最適化のため、ソースコード抜粋の②のループを最適化制御行でループ展開します。</p></li>
+</ul>
+<p>[チューニング実施後の calc_function_4 関数のソースコード抜粋]</p>
+<p><a class="reference internal" href="../_images/image25.png"><img alt="image25" src="../_images/image25.png" style="width: 498.25px; height: 293.25px;" /></a></p>
+<p>しかしながら、上記最適化制御行ではコンパイラによるループ展開ができなかったため、代わりに次のチューニングを実施しました。</p>
+<ul class="simple">
+<li><p>ソースコード抜粋の②のループを、最適化制御行を使わずにループ展開</p></li>
+</ul>
+<p>[チューニング実施後の calc_function_4 関数のソースコード抜粋]</p>
+<p><a class="reference internal" href="../_images/image26.png"><img alt="image26" src="../_images/image26.png" style="width: 431.75px; height: 642.25px;" /></a></p>
+</section>
+<section id="id8">
+<span id="id9"></span><h2><span class="section-number">4.9.4. </span>効果の検証<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h2>
+<p>実施したチューニングを評価するために、詳細プロファイラで出力した、「システム方程式マトリクス計算」計測区間の Cycle Accounting（プログラムの実行時間の内訳）を、チューニング実施前後で比較しました。</p>
+<p><a class="reference internal" href="../_images/image27.png"><img alt="image27" src="../_images/image27.png" style="width: 817.38px; height: 419.58px;" /></a></p>
+<p>上記グラフのうち、チューニング実施前の中で最も実行時間が長いプロセス（Process 392）と、チューニング実施後の中で最も実行時間が長いプロセス（Process 412）を比較すると、チューニング実施後では約10%実行時間が改善しました。プロセスごとの出力項目をみると「Floating-point operation wait」が共通して改善しており、ループ展開によるスケジューリング改善の効果が表れていると考えられます。</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">目次</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">4.9. 最適化制御行を使わないループ展開</a><ul>
+<li><a class="reference internal" href="#id2">4.9.1. チューニング対象</a></li>
+<li><a class="reference internal" href="#id4">4.9.2. 分析</a></li>
+<li><a class="reference internal" href="#id6">4.9.3. 実施</a></li>
+<li><a class="reference internal" href="#id8">4.9.4. 効果の検証</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>前のトピックへ</h4>
+    <p class="topless"><a href="4p8.html"
+                          title="前の章へ"><span class="section-number">4.8. </span>ループ外への不変式の移動</a></p>
+  </div>
+  <div>
+    <h4>次のトピックへ</h4>
+    <p class="topless"><a href="4p10.html"
+                          title="次の章へ"><span class="section-number">4.10. </span>2次元配列のメモリ配置改善</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">クイック検索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="検索" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="4p10.html" title="4.10. 2次元配列のメモリ配置改善"
+             >次へ</a></li>
+        <li class="right" >
+          <a href="4p8.html" title="4.8. ループ外への不変式の移動"
+             >前へ</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  ドキュメント</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" ><span class="section-number">4. </span>チューニング項目</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.9. </span>最適化制御行を使わないループ展開</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, 理化学研究所計算科学研究センター.
+    &nbsp;&nbsp;<a href="https://www.fugaku.r-ccs.riken.jp/">Fugaku Portal Top</a>
+    </div>
+  </body>
+</html>

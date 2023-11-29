@@ -1,0 +1,92 @@
+
+
+<!doctype html>
+
+<html lang="ja" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>5. まとめ &#8212;   ドキュメント</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="../_static/bizstyle.css?v=532c1bf3" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=89e52957" />
+    
+    <script src="../_static/documentation_options.js?v=c033477b"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/translations.js?v=4dbe4bdc"></script>
+    <script src="../_static/bizstyle.js"></script>
+    <link rel="search" title="検索" href="../search.html" />
+    <link rel="prev" title="4.10. 2次元配列のメモリ配置改善" href="../section4/4p10.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../section4/4p10.html" title="4.10. 2次元配列のメモリ配置改善"
+             accesskey="P">前へ</a></li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  ドキュメント</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">5. </span>まとめ</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="section5">
+<span id="id1"></span><h1><span class="section-number">5. </span>まとめ<a class="headerlink" href="#section5" title="Link to this heading">¶</a></h1>
+<p>本文書では、大規模かつ複雑なアプリケーションの１つである商用 CFD アプリケーションをチューニングした手順や内容などの事例を紹介しました。</p>
+<p>本アプリケーションは大規模で複雑なため、アプリケーション全体の詳細プロファイラの計測結果が得られないなど、全体の詳細な情報の収集・分析が困難でした。そのため、計測区間ごとの実行時間と基本プロファイラで関数のコストを計測し、それらを材料とすることで対象関数を絞りました。対象を絞った上で、対象関数やループの詳細プロファイラの計測結果や翻訳時に出力する最適化メッセージを分析し、その結果をもとにチューニング項目を決定しました。</p>
+<p>またコストが多くの関数に分散しているため、多数の関数をチューニングしないとアプリケーションの大幅な改善には繋がらないという困難もありました。そのため、アプリケーション全体の52％を占める上位30個までの関数の分析を行った上で様々なチューニング項目を実施し、プロセス間の負荷バランス向上や、メモリ確保のような多くの関数で利用される関数へのチューニングなども実施しました。なお実際のチューニング作業では、時間が限られていたため、目標性能達成までの見通しが立った段階で、作業者追加など計画の見直しを余儀なくされました。</p>
+<p>これらの努力により、最終的に本アプリケーションの性能がチューニング実施前よりも約58%改善、つまり性能が約2.4倍向上（実行時間が202.9秒から85.0秒に改善）し、目標を達成しました。</p>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h4>前のトピックへ</h4>
+    <p class="topless"><a href="../section4/4p10.html"
+                          title="前の章へ"><span class="section-number">4.10. </span>2次元配列のメモリ配置改善</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">クイック検索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="検索" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../section4/4p10.html" title="4.10. 2次元配列のメモリ配置改善"
+             >前へ</a></li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  ドキュメント</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">5. </span>まとめ</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, 理化学研究所計算科学研究センター.
+    &nbsp;&nbsp;<a href="https://www.fugaku.r-ccs.riken.jp/">Fugaku Portal Top</a>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,200 @@
+
+
+<!doctype html>
+
+<html lang="ja" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>2. 目標性能とチューニング手順 &#8212;   ドキュメント</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="../_static/bizstyle.css?v=532c1bf3" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=89e52957" />
+    
+    <script src="../_static/documentation_options.js?v=c033477b"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/translations.js?v=4dbe4bdc"></script>
+    <script src="../_static/bizstyle.js"></script>
+    <link rel="search" title="検索" href="../search.html" />
+    <link rel="next" title="3. チューニングの作業内容と結果" href="../section3/index.html" />
+    <link rel="prev" title="1. はじめに" href="../section1/index.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../section3/index.html" title="3. チューニングの作業内容と結果"
+             accesskey="N">次へ</a></li>
+        <li class="right" >
+          <a href="../section1/index.html" title="1. はじめに"
+             accesskey="P">前へ</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  ドキュメント</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">2. </span>目標性能とチューニング手順</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="section2">
+<span id="id1"></span><h1><span class="section-number">2. </span>目標性能とチューニング手順<a class="headerlink" href="#section2" title="Link to this heading">¶</a></h1>
+<p>本章では、本アプリケーションに対して実施したチューニングにおける前提条件と、チューニングの手順を紹介します。</p>
+<section id="id2">
+<h2><span class="section-number">2.1. </span>目標性能と前提条件<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>本アプリケーションに対して実施したチューニングの目標性能と前提条件は以下の通りです。</p>
+<blockquote>
+<div><dl>
+<dt><strong>目標性能</strong></dt><dd><p>チューニング実施前の A64FX プロセッサでの実行時間は、x86 プロセッサでの実行時間の2倍程度でした。そこで、x86 プロセッサと同程度以上の性能を目指し、実行時間をチューニング実施前の半分以下にすることを目標としました。</p>
+</dd>
+<dt><strong>前提条件</strong></dt><dd><p>チューニングを行うにあたり、前提となる条件は以下の通りです。</p>
+<ul class="simple">
+<li><p>翻訳条件</p></li>
+</ul>
+<blockquote>
+<div><ul>
+<li><p>コンパイラのバージョン：tcsds-1.2.26</p></li>
+<li><p>翻訳時のオプション： -Ofast -flto -ffj-ocl -Nclang -Koptmsg=2 -funsafe-math-optimizations -Wno-comment -Nlst=t -mllvm</p>
+<p>※スレッド並列化後は、上記に -Kopenmp を追加しています。</p>
+</li>
+</ul>
+</div></blockquote>
+<ul class="simple">
+<li><p>実行条件</p></li>
+</ul>
+<blockquote>
+<div><ul>
+<li><p>評価時に使用したシステム：「富岳」と同じアーキテクチャーを持つ PRIMEHPC FX1000</p></li>
+<li><p>実行時に使用する主なミドルウェアの版数：tcsds-1.2.26</p></li>
+<li><p>並列数：10ノード480コア</p>
+<p>※本アプリケーションを480 MPI 並列で実行。なおスレッド並列化後は特段の記載がない限り480 MPI 並列かつ1スレッド並列で実行。</p>
+</li>
+<li><p>性能評価用モデル：航空機の翼周辺の流体解析モデル（約1400万要素、定常解析モデル）</p>
+<p>※通常は定常状態になるまで繰り返し計算しますが、ここでは繰り返し計算の回数を100に固定しました。なお、本モデルは、利用者が求める大規模なシミュレーションよりも規模が小さいですが、本モデルを用いたチューニングにより得られる改善効果は大規模なシミュレーションでも同様に得られると予想されるため、性能評価しやすい本モデルを選択しました。</p>
+</li>
+</ul>
+</div></blockquote>
+</dd>
+</dl>
+</div></blockquote>
+</section>
+<section id="tuningmethods">
+<span id="id3"></span><h2><span class="section-number">2.2. </span>チューニング手順<a class="headerlink" href="#tuningmethods" title="Link to this heading">¶</a></h2>
+<p>本アプリケーションへのチューニングは以下の手順で実施しました。本節ではその内容と作業の目的を紹介します。詳細については3章（ <a class="reference internal" href="../section3/index.html#section3"><span class="std std-ref">チューニングの作業内容と結果</span></a> ）で紹介します。</p>
+<ol class="arabic">
+<li><p><strong>実行時間の計測</strong></p>
+<p>チューニング効果を検証するための基準として、チューニング実施前のアプリケーション全体の実行時間を計測しました。その際、チューニング効果の見通しを立てやすくするために、主な処理内容に合わせて区分けされた区間（以下、計測区間）の実行時間も計測しました。計測結果は3.1節（ <a class="reference internal" href="../section3/index.html#elapsedtime"><span class="std std-ref">実行時間の計測</span></a> ）で紹介します。</p>
+</li>
+<li><p><strong>関数単位のコストの計測</strong></p>
+<p>本アプリケーションは大規模かつ複雑であるため、アプリケーション全体あるいは上述の計測区間に対して詳細なプロファイル情報を収集し分析することは困難です。そこで分析対象を絞るため、富士通製プロファイラ（基本プロファイラ）を利用して、チューニング実施前の関数単位のコストを計測しました。計測結果は3.2節（ <a class="reference internal" href="../section3/index.html#fippcost"><span class="std std-ref">関数単位のコストの計測</span></a> ）で紹介します。なお、富士通製プロファイラの利用方法などについては、「富岳」の利用者ポータルに掲載されている『プロファイラ使用手引書』を参照してください。</p>
+</li>
+<li><p><strong>チューニングの実施</strong></p></li>
+</ol>
+<blockquote>
+<div><p>以下の3-1から3-4までのチューニングの手順を、目標性能達成に向けて繰り返し実施します。3-1から3-4までの手順を１度実施することを、１つのチューニング項目と呼びます。本アプリケーションに対して実施した全てのチューニング項目は3.3.1項（ <a class="reference internal" href="../section3/index.html#tuninglist"><span class="std std-ref">チューニング項目の一覧</span></a> ）で紹介します。</p>
+<blockquote>
+<div><p>3-1. <strong>チューニング対象を選択</strong></p>
+<blockquote>
+<div><p>手順2の計測結果を参考に、関数単位のコストからチューニングの優先順位を決め、優先度の高い関数からソースコードを確認し、性能改善の可能性があるループなどがあればチューニング対象の関数としました。また、関数のコストは低いものの、チューニングによってアプリケーション全体に改善効果が期待できるものもあり、そのような関数を対象にした場合もありました。</p>
+</div></blockquote>
+<p>3-2. <strong>分析</strong></p>
+<blockquote>
+<div><p>手順3-1で選択した関数や性能改善の可能性のあるループに対して、翻訳時に出力される最適化メッセージや、必要に応じて計測した詳細プロファイラの結果を分析し、チューニング内容を決定しました。なお、チューニングの実施しやすさや改善効果の見通しを考慮して、チューニングの優先順位の変更や実施の断念をする場合もありました。</p>
+</div></blockquote>
+<p>3-3. <strong>実施</strong></p>
+<blockquote>
+<div><p>手順3-2で決定したチューニング内容を実施しました。</p>
+</div></blockquote>
+<p>3-4. <strong>効果の検証</strong></p>
+<blockquote>
+<div><p>チューニング実施後の性能を評価し、効果を検証しました。なお、検証には主に富士通製プロファイラ（基本プロファイラまたは詳細プロファイラ）を用いました。それぞれの評価方法は以下の通りです。</p>
+<blockquote>
+<div><ul>
+<li><p>基本プロファイラを用いた評価</p>
+<p>対象関数とアプリケーション全体のコストの性能改善率を評価しました。</p>
+</li>
+<li><p>詳細プロファイラを用いた評価</p></li>
+</ul>
+<blockquote>
+<div><p>詳細プロファイラをかける区間を限定した上で、ある1つのコアメモリグループに割り当てられた12プロセス分の実行時間の内訳（Cycle Accounting）をチューニング実施前後で比較しました。なお詳細プロファイラをかける区間はチューニング項目によって異なります。</p>
+</div></blockquote>
+</div></blockquote>
+</div></blockquote>
+</div></blockquote>
+</div></blockquote>
+<ol class="arabic" start="4">
+<li><p><strong>アプリケーション性能の計測と評価</strong></p>
+<p>チューニング実施後、アプリケーション全体の改善効果を確認するために、手順1と同様に実行時間を計測し、評価しました。計測結果は3.3.2項（ <a class="reference internal" href="../section3/index.html#tuningresult"><span class="std std-ref">アプリケーションの改善結果</span></a> ）で紹介します。今回のチューニングでは「チューニングの実施」を44回実施し、その過程で「アプリケーション性能の計測と評価」を13回実施しました。</p>
+</li>
+</ol>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">目次</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">2. 目標性能とチューニング手順</a><ul>
+<li><a class="reference internal" href="#id2">2.1. 目標性能と前提条件</a></li>
+<li><a class="reference internal" href="#tuningmethods">2.2. チューニング手順</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>前のトピックへ</h4>
+    <p class="topless"><a href="../section1/index.html"
+                          title="前の章へ"><span class="section-number">1. </span>はじめに</a></p>
+  </div>
+  <div>
+    <h4>次のトピックへ</h4>
+    <p class="topless"><a href="../section3/index.html"
+                          title="次の章へ"><span class="section-number">3. </span>チューニングの作業内容と結果</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">クイック検索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="検索" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../section3/index.html" title="3. チューニングの作業内容と結果"
+             >次へ</a></li>
+        <li class="right" >
+          <a href="../section1/index.html" title="1. はじめに"
+             >前へ</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  ドキュメント</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">2. </span>目標性能とチューニング手順</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, 理化学研究所計算科学研究センター.
+    &nbsp;&nbsp;<a href="https://www.fugaku.r-ccs.riken.jp/">Fugaku Portal Top</a>
+    </div>
+  </body>
+</html>

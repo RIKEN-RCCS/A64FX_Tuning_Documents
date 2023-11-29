@@ -1,0 +1,93 @@
+
+.. _4p2:
+
+Reducing load and store operations of data by loop unrolling
+------------------------------------------------------------
+
+.. _target-for-this-tuning-1:
+
+Target for this tuning
+~~~~~~~~~~~~~~~~~~~~~~
+
+The target for tuning in this section is the function “calc_function_1”,
+which is in the measurement region “Solving the system of equations”. In
+the initial version of the Application, the cost of this function was
+23.3% of that of the entire Application.
+
+.. _analysis-1:
+
+Analysis
+~~~~~~~~
+
+The following series of loops was selected as a target after the
+analysis of the function “calc_function_1”. The key points of this
+source code are as follows:
+
+-  The loops (1) and (2) in the source code had been unrolled by OCL,
+   while the loops (3), (4), and (5) were not unrolled automatically by
+   the compiler.
+
+-  The iteration count of each loop (3), (4), and (5) was 5 (constant
+   with this model). By applying the loop unrolling to these loops, the
+   values of array “b” were expected to be loaded into the registers,
+   and the number of operations of load and store for the values of
+   array “b” in memory was expected to be reduced.
+
+[Some lines from function “calc_function_1” before this tuning was
+performed]
+
+|image4|
+
+.. _tuning-1:
+
+Tuning
+~~~~~~
+
+The following tuning was performed.
+
+-  The OCL was specified to unroll the loops (3), (4), and (5).
+
+-  The “if” statement was inserted for CLONE optimization; this “if”
+   statement was needed to indicate to the compiler that the iteration
+   count of each loop (3), (4), and (5) in case it was 5.
+
+..
+
+   \* With the compiler version “tcsds-1.2.31” or later, the pragma loop
+   clone feature was added even in clang mode (usage: #pragma fj loop
+   clone *var==*\ n). This pragma is expected to achieve the same effect
+   as the CLONE optimization discussed in this section which is inserting
+   the “if” statement. However, this pragma was not available when this
+   tuning work was performed (clang mode was used for this Application).
+
+[Some lines from function “calc_function_1” after this tuning was
+performed]
+
+|image5|
+
+.. _evaluation-of-the-performance-2:
+
+Evaluation of the performance
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To evaluate the effect of this tuning, cost information (output by fipp)
+of the entire Application and target function before performing this
+tuning was compared with that after performing this tuning.
+
+The following table represents the cost measurement results by fipp.
+This tuning reduced the cost of the function “calc_function_1” by 20.8%
+and the entire Application cost by 3.5%.
+
+[Cost measurement results by fipp]
+
+
+.. include:: ../table/table6.rst
+
+.. |image4| image:: ../media/image4.png
+   :scale: 25%
+   
+.. |image5| image:: ../media/image5.png
+   :scale: 25%
+   
+   
+   

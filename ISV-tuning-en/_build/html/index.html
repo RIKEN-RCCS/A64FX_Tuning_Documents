@@ -1,0 +1,186 @@
+
+
+<!doctype html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Case Study: Performance Tuning of ISV Application &#8212;   documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="_static/bizstyle.css?v=532c1bf3" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=89e52957" />
+    
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/bizstyle.js"></script>
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="1. Introduction" href="section1/index.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="section1/index.html" title="1. Introduction"
+             accesskey="N">next</a></li>
+        <li class="nav-item nav-item-0"><a href="#">  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Case Study: Performance Tuning of ISV Application</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="case-study-performance-tuning-of-isv-application">
+<h1>Case Study: Performance Tuning of ISV Application<a class="headerlink" href="#case-study-performance-tuning-of-isv-application" title="Link to this heading">¶</a></h1>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Index</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="section1/index.html">1. Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="section1/index.html#purpose-of-this-document">1.1. Purpose of this document</a></li>
+<li class="toctree-l2"><a class="reference internal" href="section1/index.html#application-software-to-be-tuned">1.2. Application software to be tuned</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="section2/index.html">2. Target performance and procedure of tuning</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="section2/index.html#target-performance-and-conditions">2.1. Target performance and conditions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="section2/index.html#procedure-of-tuning">2.2. Procedure of tuning</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="section3/index.html">3. Tuning details and results</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="section3/index.html#evaluation-of-the-performance">3.1. Evaluation of the performance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="section3/index.html#cost-of-each-function">3.2. Cost of each function</a></li>
+<li class="toctree-l2"><a class="reference internal" href="section3/index.html#tuning-of-the-application">3.3. Tuning of the Application</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="section3/index.html#tuning-items">3.3.1. Tuning items</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section3/index.html#tuning-results">3.3.2. Tuning results</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="section4/index.html">4. Tuning items</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="section4/4p1.html">4.1. SIMDization of division operations and suppression of SIMDization for loops with small iteration counts</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p1.html#target-for-this-tuning">4.1.1. Target for this tuning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p1.html#analysis">4.1.2. Analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p1.html#tuning">4.1.3. Tuning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p1.html#evaluation-of-the-performance">4.1.4. Evaluation of the performance</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="section4/4p2.html">4.2. Reducing load and store operations of data by loop unrolling</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p2.html#target-for-this-tuning">4.2.1. Target for this tuning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p2.html#analysis">4.2.2. Analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p2.html#tuning">4.2.3. Tuning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p2.html#evaluation-of-the-performance">4.2.4. Evaluation of the performance</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="section4/4p3.html">4.3. SIMDization by loop collapse</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p3.html#target-for-this-tuning">4.3.1. Target for this tuning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p3.html#analysis">4.3.2. Analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p3.html#tuning">4.3.3. Tuning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p3.html#evaluation-of-the-performance">4.3.4. Evaluation of the performance</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="section4/4p4.html">4.4. Changing the access direction of arrays</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p4.html#target-for-this-tuning">4.4.1. Target for this tuning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p4.html#analysis">4.4.2. Analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p4.html#tuning">4.4.3. Tuning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p4.html#evaluation-of-the-performance">4.4.4. Evaluation of the performance</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="section4/4p5.html">4.5. SIMDization by SVE ACLE</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p5.html#target-for-this-tuning">4.5.1. Target for this tuning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p5.html#analysis">4.5.2. Analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p5.html#tuning">4.5.3. Tuning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p5.html#evaluation-of-the-performance">4.5.4. Evaluation of the performance</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="section4/4p6.html">4.6. Built-in prefetch</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p6.html#target-for-this-tuning">4.6.1. Target for this tuning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p6.html#analysis">4.6.2. Analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p6.html#tuning">4.6.3. Tuning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p6.html#evaluation-of-the-performance">4.6.4. Evaluation of the performance</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="section4/4p7.html">4.7. Moving division operations to outside of the loop, and applying SIMDization to the division operations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p7.html#target-for-this-tuning">4.7.1. Target for this tuning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p7.html#analysis">4.7.2. Analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p7.html#tuning">4.7.3. Tuning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p7.html#evaluation-of-the-performance">4.7.4. Evaluation of the performance</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="section4/4p8.html">4.8. Moving invariant expressions to outside of the loop</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p8.html#target-for-this-tuning">4.8.1. Target for this tuning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p8.html#analysis">4.8.2. Analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p8.html#tuning">4.8.3. Tuning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p8.html#evaluation-of-the-performance">4.8.4. Evaluation of the performance</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="section4/4p9.html">4.9. Loop unrolling manually instead of OCLs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p9.html#target-for-this-tuning">4.9.1. Target for this tuning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p9.html#analysis">4.9.2. Analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p9.html#tuning">4.9.3. Tuning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p9.html#evaluation-of-the-performance">4.9.4. Evaluation of the performance</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="section4/4p10.html">4.10. Improving the memory placement of two-dimensional arrays for sequential access</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p10.html#target-for-this-tuning">4.10.1. Target for this tuning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p10.html#analysis">4.10.2. Analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p10.html#tuning">4.10.3. Tuning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p10.html#evaluation-of-the-performance">4.10.4. Evaluation of the performance</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="section5/index.html">5. Summary</a></li>
+</ul>
+</div>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="section1/index.html"
+                          title="next chapter"><span class="section-number">1. </span>Introduction</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="section1/index.html" title="1. Introduction"
+             >next</a></li>
+        <li class="nav-item nav-item-0"><a href="#">  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Case Study: Performance Tuning of ISV Application</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, RIKEN Center for Computational Science.
+    &nbsp;&nbsp;<a href="https://www.fugaku.r-ccs.riken.jp/">Fugaku Portal Top</a>
+    </div>
+  </body>
+</html>

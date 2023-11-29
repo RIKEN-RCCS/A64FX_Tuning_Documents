@@ -1,0 +1,175 @@
+
+
+<!doctype html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>4.6. Built-in prefetch &#8212;   documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="../_static/bizstyle.css?v=532c1bf3" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=89e52957" />
+    
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/bizstyle.js"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="4.7. Moving division operations to outside of the loop, and applying SIMDization to the division operations" href="4p7.html" />
+    <link rel="prev" title="4.5. SIMDization by SVE ACLE" href="4p5.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="4p7.html" title="4.7. Moving division operations to outside of the loop, and applying SIMDization to the division operations"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="4p5.html" title="4.5. SIMDization by SVE ACLE"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U"><span class="section-number">4. </span>Tuning items</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.6. </span>Built-in prefetch</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="built-in-prefetch">
+<span id="p6"></span><h1><span class="section-number">4.6. </span>Built-in prefetch<a class="headerlink" href="#built-in-prefetch" title="Link to this heading">¶</a></h1>
+<section id="target-for-this-tuning">
+<span id="target-for-this-tuning-5"></span><h2><span class="section-number">4.6.1. </span>Target for this tuning<a class="headerlink" href="#target-for-this-tuning" title="Link to this heading">¶</a></h2>
+<p>The target for tuning in this section is the function “make_function_3”,
+which is in the measurement region “Making the system of equations”. In
+the initial version of the Application, the cost of this function was
+1.7% of that of the entire Application.</p>
+<p>For the functions “make_function_2” and “make_function_7” the same
+tuning was also performed. The analysis and tuning points were same as
+those for the function “make_function_3”. This section describes the
+tuning for the function “make_function_3” as an example.</p>
+</section>
+<section id="analysis">
+<span id="analysis-5"></span><h2><span class="section-number">4.6.2. </span>Analysis<a class="headerlink" href="#analysis" title="Link to this heading">¶</a></h2>
+<p>The following nested loop (1) was selected as a target after the
+analysis of the function “make_function_3”. For discussion later, both
+the function “make_function_3” and the caller of the function are shown
+in the following figure. The key points of this source code are as
+follows:</p>
+<ul class="simple">
+<li><p>As seen in the results of fapp for the loop (1) in Section 4.6.4,
+cache access wait, such as “Floating-point load L2 cache access wait”
+event, occurred.</p></li>
+<li><p>The array “x” in the function “make_function_3” accessed memory map
+non-sequentially, therefore cache misses may have occurred
+frequently.</p></li>
+</ul>
+<p>[Some lines from function “make_function_3” and the caller of the
+function before this tuning was performed]</p>
+<p><a class="reference internal" href="../_images/image15.png"><img alt="image15" src="../_images/image15.png" style="width: 557.25px; height: 350.25px;" /></a></p>
+</section>
+<section id="tuning">
+<span id="tuning-5"></span><h2><span class="section-number">4.6.3. </span>Tuning<a class="headerlink" href="#tuning" title="Link to this heading">¶</a></h2>
+<p>The following tuning was performed.</p>
+<ul class="simple">
+<li><p>In order to improve the cache use efficiency of the function
+“make_function_3”, the built-in functions of prefetch were used. As a
+result of the analysis, these built-in functions were inserted in the
+caller of the function “make_function_3”. These built-in functions
+are one of the GNU C/C++ extensions supported by the compiler.</p></li>
+</ul>
+<p>[Some lines from the caller of the function “make_function_3” after this
+tuning was performed]</p>
+<p><a class="reference internal" href="../_images/image16.png"><img alt="image16" src="../_images/image16.png" style="width: 829.0px; height: 425.5px;" /></a></p>
+<p><a class="reference internal" href="../_images/image17.png"><img alt="image17" src="../_images/image17.png" style="width: 811.75px; height: 306.25px;" /></a></p>
+</section>
+<section id="evaluation-of-the-performance">
+<span id="evaluation-of-the-performance-6"></span><h2><span class="section-number">4.6.4. </span>Evaluation of the performance<a class="headerlink" href="#evaluation-of-the-performance" title="Link to this heading">¶</a></h2>
+<p>To evaluate the effect of this tuning, “cycle accounting” (output by
+fapp) in the function “make_function_3” before performing this tuning
+was compared with that after performing this tuning.</p>
+<p><a class="reference internal" href="../_images/image18.png"><img alt="image18" src="../_images/image18.png" style="width: 845.1px; height: 412.38px;" /></a></p>
+<p>As seen in the graphs above, the execution time of Process 441, which
+has the longest execution time (the execution time depends on the
+longest process) among the measurement results both before and after
+performing this tuning, was reduced from 8.40 seconds to 6.15 seconds,
+in other words, the performance was improved by about 27%.</p>
+<p>Especially, the execution time of “Floating-point load L2 cache access
+wait”, “Floating-point load memory access wait”, and “Integer load memory
+access wait” was significantly improved by this tuning. This improvement
+indicates the effect of this tuning.</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">4.6. Built-in prefetch</a><ul>
+<li><a class="reference internal" href="#target-for-this-tuning">4.6.1. Target for this tuning</a></li>
+<li><a class="reference internal" href="#analysis">4.6.2. Analysis</a></li>
+<li><a class="reference internal" href="#tuning">4.6.3. Tuning</a></li>
+<li><a class="reference internal" href="#evaluation-of-the-performance">4.6.4. Evaluation of the performance</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="4p5.html"
+                          title="previous chapter"><span class="section-number">4.5. </span>SIMDization by SVE ACLE</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="4p7.html"
+                          title="next chapter"><span class="section-number">4.7. </span>Moving division operations to outside of the loop, and applying SIMDization to the division operations</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="4p7.html" title="4.7. Moving division operations to outside of the loop, and applying SIMDization to the division operations"
+             >next</a></li>
+        <li class="right" >
+          <a href="4p5.html" title="4.5. SIMDization by SVE ACLE"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" ><span class="section-number">4. </span>Tuning items</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.6. </span>Built-in prefetch</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, RIKEN Center for Computational Science.
+    &nbsp;&nbsp;<a href="https://www.fugaku.r-ccs.riken.jp/">Fugaku Portal Top</a>
+    </div>
+  </body>
+</html>

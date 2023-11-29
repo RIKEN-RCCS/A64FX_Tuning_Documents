@@ -1,0 +1,179 @@
+
+
+<!doctype html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>4.5. SIMDization by SVE ACLE &#8212;   documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="../_static/bizstyle.css?v=532c1bf3" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=89e52957" />
+    
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/bizstyle.js"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="4.6. Built-in prefetch" href="4p6.html" />
+    <link rel="prev" title="4.4. Changing the access direction of arrays" href="4p4.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="4p6.html" title="4.6. Built-in prefetch"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="4p4.html" title="4.4. Changing the access direction of arrays"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U"><span class="section-number">4. </span>Tuning items</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.5. </span>SIMDization by SVE ACLE</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="simdization-by-sve-acle">
+<span id="p5"></span><h1><span class="section-number">4.5. </span>SIMDization by SVE ACLE<a class="headerlink" href="#simdization-by-sve-acle" title="Link to this heading">¶</a></h1>
+<section id="target-for-this-tuning">
+<span id="target-for-this-tuning-4"></span><h2><span class="section-number">4.5.1. </span>Target for this tuning<a class="headerlink" href="#target-for-this-tuning" title="Link to this heading">¶</a></h2>
+<p>The target for tuning in this section is the function “calc_function_4”,
+which is in the measurement region “Solving the system of equations”. In
+the initial version of the Application, the cost of this function was
+1.0% of that of the entire Application.</p>
+</section>
+<section id="analysis">
+<span id="analysis-4"></span><h2><span class="section-number">4.5.2. </span>Analysis<a class="headerlink" href="#analysis" title="Link to this heading">¶</a></h2>
+<p>The following nested loop was selected as a target after the analysis of
+the function “calc_function_4”. The key points of this source code are
+as follows:</p>
+<ul class="simple">
+<li><p>The loop (1) in the source code was not SIMDized.</p></li>
+<li><p>The iteration count of each loop (1) and (2) was 5 (constant with
+this model).</p></li>
+<li><p>Above the key points were same as those in Section 4.3 (<a class="reference internal" href="4p3.html#p3"><span class="std std-ref">SIMDization by loop collapse</span></a>). Therefore, it
+was also expected to be improved by the loop collapse.</p></li>
+</ul>
+<p>[Some lines from function “calc_function_4” before this tuning was
+performed]</p>
+<p><a class="reference internal" href="../_images/image11.png"><img alt="image11" src="../_images/image11.png" style="width: 535.0px; height: 178.0px;" /></a></p>
+</section>
+<section id="tuning">
+<span id="tuning-4"></span><h2><span class="section-number">4.5.3. </span>Tuning<a class="headerlink" href="#tuning" title="Link to this heading">¶</a></h2>
+<p>Two types of tuning, Pattern A and Pattern B, were attempted as follows.</p>
+<p>&lt;Pattern A&gt;</p>
+<ul class="simple">
+<li><p>The nested loops were collapsed into a single loop as well as Section
+4.3 (<a class="reference internal" href="4p3.html#p3"><span class="std std-ref">SIMDization by loop collapse</span></a>).</p></li>
+</ul>
+<p>[Some lines from function “calc_function_4” after this tuning Pattern A
+was performed]</p>
+<p><a class="reference internal" href="../_images/image12.png"><img alt="image12" src="../_images/image12.png" style="width: 294.25px; height: 62.25px;" /></a></p>
+<p>When compiled after performing this tuning, the optimization messages of
+the compiler indicated that SIMDization was applied to this loop,
+however the SVE instruction rate with this tuned code was 0.0%. It meant
+that the loop above was not SIMDized despite the message. Therefore,
+Pattern B was performed as follows.</p>
+<p>&lt;Pattern B&gt;</p>
+<ul class="simple">
+<li><p>SIMDization was performed by using built-in functions of SVE ACLE (Arm C
+Language Extensions for SVE: the method of specifying SVE
+instructions directly into a program).</p></li>
+</ul>
+<p>[Some lines from function “calc_function_4” after this tuning Pattern B
+was performed]</p>
+<p><a class="reference internal" href="../_images/image13.png"><img alt="image13" src="../_images/image13.png" style="width: 797.0px; height: 287.25px;" /></a></p>
+</section>
+<section id="evaluation-of-the-performance">
+<span id="evaluation-of-the-performance-5"></span><h2><span class="section-number">4.5.4. </span>Evaluation of the performance<a class="headerlink" href="#evaluation-of-the-performance" title="Link to this heading">¶</a></h2>
+<p>To evaluate the effect of this tuning, “cycle accounting” (output by
+fapp) in the loop (1) before performing this tuning was compared with
+that after performing this tuning.</p>
+<p><a class="reference internal" href="../_images/image14.png"><img alt="image14" src="../_images/image14.png" style="width: 856.8px; height: 405.18px;" /></a></p>
+<p>As seen in the graphs above, the execution time of Process 199, which
+has the longest execution time (the execution time depends on the
+longest process) among the measurement results both before and after
+performing this tuning, was reduced from 1.55 seconds to 1.45 seconds,
+in other words, the performance was improved by about 6%.</p>
+<p>Especially, the execution time of “2 instruction commit” was
+significantly improved by this tuning. This improvement indicates
+the effect of the reduction in the number of instructions due to the
+SIMDization by tuning in this section.</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">4.5. SIMDization by SVE ACLE</a><ul>
+<li><a class="reference internal" href="#target-for-this-tuning">4.5.1. Target for this tuning</a></li>
+<li><a class="reference internal" href="#analysis">4.5.2. Analysis</a></li>
+<li><a class="reference internal" href="#tuning">4.5.3. Tuning</a></li>
+<li><a class="reference internal" href="#evaluation-of-the-performance">4.5.4. Evaluation of the performance</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="4p4.html"
+                          title="previous chapter"><span class="section-number">4.4. </span>Changing the access direction of arrays</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="4p6.html"
+                          title="next chapter"><span class="section-number">4.6. </span>Built-in prefetch</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="4p6.html" title="4.6. Built-in prefetch"
+             >next</a></li>
+        <li class="right" >
+          <a href="4p4.html" title="4.4. Changing the access direction of arrays"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" ><span class="section-number">4. </span>Tuning items</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.5. </span>SIMDization by SVE ACLE</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, RIKEN Center for Computational Science.
+    &nbsp;&nbsp;<a href="https://www.fugaku.r-ccs.riken.jp/">Fugaku Portal Top</a>
+    </div>
+  </body>
+</html>

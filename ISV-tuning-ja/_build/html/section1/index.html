@@ -1,0 +1,124 @@
+
+
+<!doctype html>
+
+<html lang="ja" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>1. はじめに &#8212;   ドキュメント</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="../_static/bizstyle.css?v=532c1bf3" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=89e52957" />
+    
+    <script src="../_static/documentation_options.js?v=c033477b"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/translations.js?v=4dbe4bdc"></script>
+    <script src="../_static/bizstyle.js"></script>
+    <link rel="search" title="検索" href="../search.html" />
+    <link rel="next" title="2. 目標性能とチューニング手順" href="../section2/index.html" />
+    <link rel="prev" title="ISVアプリ性能チューニング事例報告書" href="../index.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../section2/index.html" title="2. 目標性能とチューニング手順"
+             accesskey="N">次へ</a></li>
+        <li class="right" >
+          <a href="../index.html" title="ISVアプリ性能チューニング事例報告書"
+             accesskey="P">前へ</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  ドキュメント</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">1. </span>はじめに</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="section1">
+<span id="id1"></span><h1><span class="section-number">1. </span>はじめに<a class="headerlink" href="#section1" title="Link to this heading">¶</a></h1>
+<section id="id2">
+<h2><span class="section-number">1.1. </span>本文書の目的<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>国立研究開発法人理化学研究所（以下、「理研」）は、2021年3月からスーパーコンピュータ「富岳」（以下、「富岳」）を運用しています。「理研」は「富岳」利用者を支援する業務の一環として、「富岳」を有効に利用するための様々な視点からの文書整備を重要な課題の一つに位置付けています。簡単に「富岳」の利用を始められ、習熟度に応じて高度な技術も活用できるような広範囲な文書（たとえば、「富岳」の利用手引書、プログラム言語マニュアル、各種ツールの利用ガイド、計算性能向上を目指すためのプログラミングガイドなど）を整備し利用者に提供しています。</p>
+<p>本文書では、上記の文書整備の一環として、独立系ソフトウェアベンダー（以下、ISV）が開発・販売する、ある商用アプリケーションのチューニング事例を紹介します。この事例は、富士通株式会社が ISV と協力して実施したもので、「富岳」にも用いられている A64FX プロセッサ向けのチューニングです。</p>
+<p>商用アプリケーションは一般に、オープンソースソフトウェアと比べて機能が豊富であり、ソースコードは大規模かつ複雑です。この大規模で複雑な商用アプリケーションのチューニングに関する事例は、実用的なプログラムをチューニングしたいと考える「富岳」利用者にとって有用であると考え、本文書では重要なポイントを抜粋して紹介します。</p>
+</section>
+<section id="tuningapp">
+<span id="id3"></span><h2><span class="section-number">1.2. </span>チューニング対象のアプリケーション<a class="headerlink" href="#tuningapp" title="Link to this heading">¶</a></h2>
+<p>本文書で対象とするアプリケーション（以下、本アプリケーション）は、汎用熱流体解析シミュレーションとして車体周りの空力解析や電子機器製品の熱伝導解析など、産業界の幅広い分野で利用されている商用 CFD アプリケーションです。本アプリケーションは、様々な流体モデルに対応するなどの多くの機能を持ち、一般の商用アプリケーションと同様に、ソースコードは大規模かつ複雑な構造をしています。</p>
+<p>産業界では、複雑な形状のモデルの高精細な解析など、高精度かつ大規模なシミュレーションを行おうとする動きが広まっています。本アプリケーションに対しても、このような高精度かつ大規模なシミュレーションを実行するために、数十万並列程度の計算リソースを利用することが、利用者から求められています。今後は、それを超える大規模な計算リソースの利用も求められると考えられます。</p>
+<p>そこで注目されたのがスーパーコンピュータ「富岳」です。「富岳」で大規模なシミュレーションを行うためには、現実的な時間でのシミュレーション完了を目指すための性能向上と、高精度で大規模なシミュレーションを可能にするための改善が求められます。この2つを実現し「富岳」を利用した大規模なシミュレーションを目指して、アプリケーションを開発した ISV と協力してチューニング作業を実施しました。</p>
+<p>なお、一般の多くの商用アプリケーションと同様に、知的財産権等の関係で本アプリケーションの詳細や、関数名・変数名を含むソースコードは記載できません。そのため、本書に記載されているソースコード等は、チューニング事例紹介の目的で再編集しています。</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">目次</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">1. はじめに</a><ul>
+<li><a class="reference internal" href="#id2">1.1. 本文書の目的</a></li>
+<li><a class="reference internal" href="#tuningapp">1.2. チューニング対象のアプリケーション</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>前のトピックへ</h4>
+    <p class="topless"><a href="../index.html"
+                          title="前の章へ">ISVアプリ性能チューニング事例報告書</a></p>
+  </div>
+  <div>
+    <h4>次のトピックへ</h4>
+    <p class="topless"><a href="../section2/index.html"
+                          title="次の章へ"><span class="section-number">2. </span>目標性能とチューニング手順</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">クイック検索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="検索" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../section2/index.html" title="2. 目標性能とチューニング手順"
+             >次へ</a></li>
+        <li class="right" >
+          <a href="../index.html" title="ISVアプリ性能チューニング事例報告書"
+             >前へ</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  ドキュメント</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">1. </span>はじめに</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, 理化学研究所計算科学研究センター.
+    &nbsp;&nbsp;<a href="https://www.fugaku.r-ccs.riken.jp/">Fugaku Portal Top</a>
+    </div>
+  </body>
+</html>

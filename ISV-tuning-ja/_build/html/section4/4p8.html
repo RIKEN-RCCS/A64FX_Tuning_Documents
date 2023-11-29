@@ -1,0 +1,144 @@
+
+
+<!doctype html>
+
+<html lang="ja" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>4.8. ループ外への不変式の移動 &#8212;   ドキュメント</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="../_static/bizstyle.css?v=532c1bf3" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=89e52957" />
+    
+    <script src="../_static/documentation_options.js?v=c033477b"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/translations.js?v=4dbe4bdc"></script>
+    <script src="../_static/bizstyle.js"></script>
+    <link rel="search" title="検索" href="../search.html" />
+    <link rel="next" title="4.9. 最適化制御行を使わないループ展開" href="4p9.html" />
+    <link rel="prev" title="4.7. 除算処理をループの外側に移動しSIMD化" href="4p7.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="4p9.html" title="4.9. 最適化制御行を使わないループ展開"
+             accesskey="N">次へ</a></li>
+        <li class="right" >
+          <a href="4p7.html" title="4.7. 除算処理をループの外側に移動しSIMD化"
+             accesskey="P">前へ</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  ドキュメント</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U"><span class="section-number">4. </span>チューニング項目</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.8. </span>ループ外への不変式の移動</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="p8">
+<span id="id1"></span><h1><span class="section-number">4.8. </span>ループ外への不変式の移動<a class="headerlink" href="#p8" title="Link to this heading">¶</a></h1>
+<section id="id2">
+<span id="id3"></span><h2><span class="section-number">4.8.1. </span>チューニング対象<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>本節で対象とした calc_function_2 関数は、「システム方程式マトリクス計算」の計測区間に含まれ、チューニング実施前のアプリケーション全体の約1.9％のコストを占めている関数です。本関数は「システム方程式マトリクス計算」に含まれる関数の中では、2番目にコストが高い関数です。</p>
+</section>
+<section id="id4">
+<span id="id5"></span><h2><span class="section-number">4.8.2. </span>分析<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>calc_function_2 関数を分析した結果、下記のループに着目しました。このループの特徴は以下の通りです。</p>
+<ul class="simple">
+<li><p>ソースコード抜粋の①ループは、コンパイラによりループ展開されます。</p></li>
+<li><p>ソースコード抜粋の②の除算結果は、ループにかかわらず一定であるため、①ループの外に移動することが可能です。</p></li>
+</ul>
+<p>[チューニング実施前の calc_function_2 関数のソースコード抜粋]</p>
+<p><a class="reference internal" href="../_images/image21.png"><img alt="image21" src="../_images/image21.png" style="width: 750.5px; height: 213.5px;" /></a></p>
+</section>
+<section id="id6">
+<span id="id7"></span><h2><span class="section-number">4.8.3. </span>実施<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<p>分析結果を踏まえて、以下のチューニングを実施しました。</p>
+<ul class="simple">
+<li><p>①ループに対して不変な除算処理をループの外に移動します。</p></li>
+</ul>
+<p>[チューニング実施後の calc_function_2 関数のソースコード抜粋]</p>
+<p><a class="reference internal" href="../_images/image22.png"><img alt="image22" src="../_images/image22.png" style="width: 526.25px; height: 210.75px;" /></a></p>
+</section>
+<section id="id8">
+<span id="id9"></span><h2><span class="section-number">4.8.4. </span>効果の検証<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h2>
+<p>実施したチューニングを評価するために、詳細プロファイラで出力した、「システム方程式マトリクス計算」計測区間の Cycle Accounting（プログラムの実行時間の内訳）を、チューニング実施前後で比較しました。</p>
+<p><a class="reference internal" href="../_images/image23.png"><img alt="image23" src="../_images/image23.png" style="width: 811.8px; height: 412.38px;" /></a></p>
+<p>上記グラフのうち、チューニング実施前の中で最も実行時間が長いプロセス（Process 388）と、チューニング実施後の中で最も実行時間が長いプロセス（Process 392）を比較すると、チューニング実施後では約0.4%実行時間が改善しました。これは、本チューニングによる効果が表れていると考えられます。</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">目次</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">4.8. ループ外への不変式の移動</a><ul>
+<li><a class="reference internal" href="#id2">4.8.1. チューニング対象</a></li>
+<li><a class="reference internal" href="#id4">4.8.2. 分析</a></li>
+<li><a class="reference internal" href="#id6">4.8.3. 実施</a></li>
+<li><a class="reference internal" href="#id8">4.8.4. 効果の検証</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>前のトピックへ</h4>
+    <p class="topless"><a href="4p7.html"
+                          title="前の章へ"><span class="section-number">4.7. </span>除算処理をループの外側に移動しSIMD化</a></p>
+  </div>
+  <div>
+    <h4>次のトピックへ</h4>
+    <p class="topless"><a href="4p9.html"
+                          title="次の章へ"><span class="section-number">4.9. </span>最適化制御行を使わないループ展開</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">クイック検索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="検索" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="4p9.html" title="4.9. 最適化制御行を使わないループ展開"
+             >次へ</a></li>
+        <li class="right" >
+          <a href="4p7.html" title="4.7. 除算処理をループの外側に移動しSIMD化"
+             >前へ</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  ドキュメント</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" ><span class="section-number">4. </span>チューニング項目</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.8. </span>ループ外への不変式の移動</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, 理化学研究所計算科学研究センター.
+    &nbsp;&nbsp;<a href="https://www.fugaku.r-ccs.riken.jp/">Fugaku Portal Top</a>
+    </div>
+  </body>
+</html>

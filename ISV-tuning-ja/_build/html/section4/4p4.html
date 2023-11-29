@@ -1,0 +1,146 @@
+
+
+<!doctype html>
+
+<html lang="ja" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>4.4. ループ回転方向変更 &#8212;   ドキュメント</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="../_static/bizstyle.css?v=532c1bf3" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=89e52957" />
+    
+    <script src="../_static/documentation_options.js?v=c033477b"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/translations.js?v=4dbe4bdc"></script>
+    <script src="../_static/bizstyle.js"></script>
+    <link rel="search" title="検索" href="../search.html" />
+    <link rel="next" title="4.5. SVE ACLEによるSIMD化" href="4p5.html" />
+    <link rel="prev" title="4.3. ループ一重化によるSIMD化促進" href="4p3.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="4p5.html" title="4.5. SVE ACLEによるSIMD化"
+             accesskey="N">次へ</a></li>
+        <li class="right" >
+          <a href="4p3.html" title="4.3. ループ一重化によるSIMD化促進"
+             accesskey="P">前へ</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  ドキュメント</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U"><span class="section-number">4. </span>チューニング項目</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.4. </span>ループ回転方向変更</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="p4">
+<span id="id1"></span><h1><span class="section-number">4.4. </span>ループ回転方向変更<a class="headerlink" href="#p4" title="Link to this heading">¶</a></h1>
+<section id="id2">
+<span id="id3"></span><h2><span class="section-number">4.4.1. </span>チューニング対象<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>本節で対象とした othSolv_function_3 関数は、「システム方程式以外の方程式処理」の計測区間に含まれ、チューニング実施前のアプリケーション全体の約0.8％のコストを占めている関数です。</p>
+</section>
+<section id="id4">
+<span id="id5"></span><h2><span class="section-number">4.4.2. </span>分析<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>othSolv_function_3 関数を分析した結果、下記のループに着目しました。このループの特徴は以下の通りです。</p>
+<ul class="simple">
+<li><p>ソースコード抜粋の①のループは降順で回転しますが、②のループは昇順で回転します。</p></li>
+<li><p>二重ループのそれぞれの回転方向が異なるため、ハードウェアプリフェッチが当たりづらくなることが予想されます。</p></li>
+</ul>
+<p>[チューニング実施前の othSolv_function_3 関数のソースコード抜粋]</p>
+<p><a class="reference internal" href="../_images/image8.png"><img alt="image8" src="../_images/image8.png" style="width: 420.75px; height: 180.75px;" /></a></p>
+</section>
+<section id="id6">
+<span id="id7"></span><h2><span class="section-number">4.4.3. </span>実施<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<p>分析結果を踏まえて、以下のチューニングを実施しました。</p>
+<ul class="simple">
+<li><p>ソースコード抜粋の②のループの回転方向を①と同じく降順に変更します。</p></li>
+</ul>
+<p>[チューニング実施後の othSolv_function_3 関数のソースコード抜粋]</p>
+<p><a class="reference internal" href="../_images/image9.png"><img alt="image9" src="../_images/image9.png" style="width: 699.0px; height: 144.75px;" /></a></p>
+</section>
+<section id="id8">
+<span id="id9"></span><h2><span class="section-number">4.4.4. </span>効果の検証<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h2>
+<p>実施したチューニングを評価するために、詳細プロファイラで出力した、チューニングを実施したループ（上記ソースコード抜粋の①）の Cycle Accounting（プログラムの実行時間の内訳）を、チューニング実施前後で比較しました。</p>
+<p>以下の各グラフは、ある1つのコアメモリグループに割り当てられた12個のプロセスの Cycle Accounting を、割り当てられた順に示しています。各プロセスは、1ノードに4つあるコアメモリグループに順番に1つずつ割り当てられるため、4つおきのプロセス番号になります。</p>
+<p><a class="reference internal" href="../_images/image10.png"><img alt="image10" src="../_images/image10.png" style="width: 823.68px; height: 422.64px;" /></a></p>
+<p>上記グラフのうち、チューニング実施前の中で最も実行時間が長いプロセス（Process 5）と、チューニング実施後の中で最も実行時間が長いプロセス（Process 17）を比較すると、チューニング実施後では約27%実行時間が改善しました。実行時間の内訳をみると「Integer load L1D cache access wait」と「Instruction fetch wait」が特に改善しており、これは本節のチューニングによりプリフェッチが当たりやすくなった効果と考えられます。</p>
+<p>また「Floating-point operation wait」も改善が見られました。これは本節のチューニングにより命令スケジューリングが改善されたためと考えられます。</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">目次</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">4.4. ループ回転方向変更</a><ul>
+<li><a class="reference internal" href="#id2">4.4.1. チューニング対象</a></li>
+<li><a class="reference internal" href="#id4">4.4.2. 分析</a></li>
+<li><a class="reference internal" href="#id6">4.4.3. 実施</a></li>
+<li><a class="reference internal" href="#id8">4.4.4. 効果の検証</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>前のトピックへ</h4>
+    <p class="topless"><a href="4p3.html"
+                          title="前の章へ"><span class="section-number">4.3. </span>ループ一重化によるSIMD化促進</a></p>
+  </div>
+  <div>
+    <h4>次のトピックへ</h4>
+    <p class="topless"><a href="4p5.html"
+                          title="次の章へ"><span class="section-number">4.5. </span>SVE ACLEによるSIMD化</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">クイック検索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="検索" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="4p5.html" title="4.5. SVE ACLEによるSIMD化"
+             >次へ</a></li>
+        <li class="right" >
+          <a href="4p3.html" title="4.3. ループ一重化によるSIMD化促進"
+             >前へ</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  ドキュメント</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" ><span class="section-number">4. </span>チューニング項目</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.4. </span>ループ回転方向変更</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, 理化学研究所計算科学研究センター.
+    &nbsp;&nbsp;<a href="https://www.fugaku.r-ccs.riken.jp/">Fugaku Portal Top</a>
+    </div>
+  </body>
+</html>

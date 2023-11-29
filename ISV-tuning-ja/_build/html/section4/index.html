@@ -1,0 +1,115 @@
+
+
+<!doctype html>
+
+<html lang="ja" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>4. チューニング項目 &#8212;   ドキュメント</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="../_static/bizstyle.css?v=532c1bf3" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=89e52957" />
+    
+    <script src="../_static/documentation_options.js?v=c033477b"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/translations.js?v=4dbe4bdc"></script>
+    <script src="../_static/bizstyle.js"></script>
+    <link rel="search" title="検索" href="../search.html" />
+    <link rel="next" title="4.1. 除算処理のSIMD化と小回転ループのSIMD化抑止" href="4p1.html" />
+    <link rel="prev" title="3. チューニングの作業内容と結果" href="../section3/index.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="4p1.html" title="4.1. 除算処理のSIMD化と小回転ループのSIMD化抑止"
+             accesskey="N">次へ</a></li>
+        <li class="right" >
+          <a href="../section3/index.html" title="3. チューニングの作業内容と結果"
+             accesskey="P">前へ</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  ドキュメント</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4. </span>チューニング項目</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="section4">
+<span id="id1"></span><h1><span class="section-number">4. </span>チューニング項目<a class="headerlink" href="#section4" title="Link to this heading">¶</a></h1>
+<p>本章では、本アプリケーションに実施した44個のチューニング項目のうち、10個を抜粋して紹介します。それぞれの特徴については 3.3.1項（ <a class="reference internal" href="../section3/index.html#tuninglist"><span class="std std-ref">チューニング項目の一覧</span></a> ）を参照してください。</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="4p1.html">4.1. 除算処理のSIMD化と小回転ループのSIMD化抑止</a></li>
+<li class="toctree-l1"><a class="reference internal" href="4p2.html">4.2. ループ展開によるload/store削減</a></li>
+<li class="toctree-l1"><a class="reference internal" href="4p3.html">4.3. ループ一重化によるSIMD化促進</a></li>
+<li class="toctree-l1"><a class="reference internal" href="4p4.html">4.4. ループ回転方向変更</a></li>
+<li class="toctree-l1"><a class="reference internal" href="4p5.html">4.5. SVE ACLEによるSIMD化</a></li>
+<li class="toctree-l1"><a class="reference internal" href="4p6.html">4.6. ビルトインプリフェッチ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="4p7.html">4.7. 除算処理をループの外側に移動しSIMD化</a></li>
+<li class="toctree-l1"><a class="reference internal" href="4p8.html">4.8. ループ外への不変式の移動</a></li>
+<li class="toctree-l1"><a class="reference internal" href="4p9.html">4.9. 最適化制御行を使わないループ展開</a></li>
+<li class="toctree-l1"><a class="reference internal" href="4p10.html">4.10. 2次元配列のメモリ配置改善</a></li>
+</ul>
+</div>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h4>前のトピックへ</h4>
+    <p class="topless"><a href="../section3/index.html"
+                          title="前の章へ"><span class="section-number">3. </span>チューニングの作業内容と結果</a></p>
+  </div>
+  <div>
+    <h4>次のトピックへ</h4>
+    <p class="topless"><a href="4p1.html"
+                          title="次の章へ"><span class="section-number">4.1. </span>除算処理のSIMD化と小回転ループのSIMD化抑止</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">クイック検索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="検索" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="4p1.html" title="4.1. 除算処理のSIMD化と小回転ループのSIMD化抑止"
+             >次へ</a></li>
+        <li class="right" >
+          <a href="../section3/index.html" title="3. チューニングの作業内容と結果"
+             >前へ</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  ドキュメント</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4. </span>チューニング項目</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, 理化学研究所計算科学研究センター.
+    &nbsp;&nbsp;<a href="https://www.fugaku.r-ccs.riken.jp/">Fugaku Portal Top</a>
+    </div>
+  </body>
+</html>

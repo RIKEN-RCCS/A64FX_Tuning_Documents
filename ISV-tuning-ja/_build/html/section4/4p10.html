@@ -1,0 +1,146 @@
+
+
+<!doctype html>
+
+<html lang="ja" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>4.10. 2次元配列のメモリ配置改善 &#8212;   ドキュメント</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="../_static/bizstyle.css?v=532c1bf3" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=89e52957" />
+    
+    <script src="../_static/documentation_options.js?v=c033477b"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/translations.js?v=4dbe4bdc"></script>
+    <script src="../_static/bizstyle.js"></script>
+    <link rel="search" title="検索" href="../search.html" />
+    <link rel="next" title="5. まとめ" href="../section5/index.html" />
+    <link rel="prev" title="4.9. 最適化制御行を使わないループ展開" href="4p9.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../section5/index.html" title="5. まとめ"
+             accesskey="N">次へ</a></li>
+        <li class="right" >
+          <a href="4p9.html" title="4.9. 最適化制御行を使わないループ展開"
+             accesskey="P">前へ</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  ドキュメント</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U"><span class="section-number">4. </span>チューニング項目</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.10. </span>2次元配列のメモリ配置改善</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="p10">
+<span id="id1"></span><h1><span class="section-number">4.10. </span>2次元配列のメモリ配置改善<a class="headerlink" href="#p10" title="Link to this heading">¶</a></h1>
+<section id="id2">
+<span id="id3"></span><h2><span class="section-number">4.10.1. </span>チューニング対象<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>本節で対象とする関数は、2次元配列のメモリ確保・開放を行う関数を対象としています。配列のメモリ確保・開放は、特定の計測区間に限らず、本アプリケーションの様々な箇所で実行されるため、アプリケーション全体の性能に影響を与えます。</p>
+</section>
+<section id="id4">
+<span id="id5"></span><h2><span class="section-number">4.10.2. </span>分析<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>本節では以下の2次元配列のメモリ確保の関数を例として記載します。特徴は以下の通りです</p>
+<ul class="simple">
+<li><p>ソースコード抜粋の①で、配列の2次元目の要素数分メモリを確保します。</p></li>
+<li><p>アドレス上ではランダムな位置でメモリが確保されます。</p></li>
+</ul>
+<p>[チューニング実施前の2次元配列のメモリ確保の関数のソースコード抜粋]</p>
+<p><a class="reference internal" href="../_images/image28.png"><img alt="image28" src="../_images/image28.png" style="width: 757.75px; height: 283.5px;" /></a></p>
+</section>
+<section id="id6">
+<span id="id7"></span><h2><span class="section-number">4.10.3. </span>実施<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<p>分析結果を踏まえて、以下のチューニングを実施しました。なお、本節のチューニングはこの関数以外にも、メモリ開放やメモリ再確保などのメモリに関連するその他の関数にも実施しました。</p>
+<ul class="simple">
+<li><p>メモリを確保する際、2次元分まとめて確保します。</p></li>
+</ul>
+<p>[チューニング実施後の2次元配列のメモリ確保の関数のソースコード抜粋]</p>
+<p><a class="reference internal" href="../_images/image29.png"><img alt="image29" src="../_images/image29.png" style="width: 658.25px; height: 340.5px;" /></a></p>
+<p>本節のチューニングにより、2次元配列の各要素がアドレス上で連続した位置に配置されます。これにより2次元配列への連続アクセスが可能になります。</p>
+<p>さらに本節のチューニングにより、チューニング項目の項番42を実施することが可能になりました。項番42は、「システム方程式マトリクス計算」に含まれる calc_function_1 関数を対象としたチューニング項目です。2次元の単精度配列の処理を行うループに対して、配列の各要素が連続することを前提に、1つの SIMD 命令で処理する配列要素数を8から16に増やすチューニングを行いました。</p>
+</section>
+<section id="id8">
+<span id="id9"></span><h2><span class="section-number">4.10.4. </span>効果の検証<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h2>
+<p>本節のチューニング項目と、項番42のチューニング項目の改善効果を評価するため、アプリケーションの実行時間を計測しました。本節のチューニング項目はアプリケーションの様々な箇所に影響を与える可能性があるので、各計測区間の実行時間も計測します。なお。ここでは性能評価用のモデルよりも要素数の大きいモデル（7300万要素）を用いて評価しました。</p>
+<p>下表は計測区間ごとの実行時間の結果です。計測結果によると、アプリケーション全体で性能が1.6%改善し、「システム方程式マトリクス計算」が6.7%改善しました。これは、本節と項番42のチューニング項目による効果が表れていると考えられます。</p>
+<a class="reference internal image-reference" href="../_images/table9.png"><img alt="../_images/table9.png" class="align-center" src="../_images/table9.png" style="width: 642.26px; height: 311.78000000000003px;" /></a>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">目次</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">4.10. 2次元配列のメモリ配置改善</a><ul>
+<li><a class="reference internal" href="#id2">4.10.1. チューニング対象</a></li>
+<li><a class="reference internal" href="#id4">4.10.2. 分析</a></li>
+<li><a class="reference internal" href="#id6">4.10.3. 実施</a></li>
+<li><a class="reference internal" href="#id8">4.10.4. 効果の検証</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>前のトピックへ</h4>
+    <p class="topless"><a href="4p9.html"
+                          title="前の章へ"><span class="section-number">4.9. </span>最適化制御行を使わないループ展開</a></p>
+  </div>
+  <div>
+    <h4>次のトピックへ</h4>
+    <p class="topless"><a href="../section5/index.html"
+                          title="次の章へ"><span class="section-number">5. </span>まとめ</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">クイック検索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="検索" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../section5/index.html" title="5. まとめ"
+             >次へ</a></li>
+        <li class="right" >
+          <a href="4p9.html" title="4.9. 最適化制御行を使わないループ展開"
+             >前へ</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  ドキュメント</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" ><span class="section-number">4. </span>チューニング項目</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.10. </span>2次元配列のメモリ配置改善</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, 理化学研究所計算科学研究センター.
+    &nbsp;&nbsp;<a href="https://www.fugaku.r-ccs.riken.jp/">Fugaku Portal Top</a>
+    </div>
+  </body>
+</html>

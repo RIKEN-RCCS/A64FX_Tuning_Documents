@@ -1,0 +1,543 @@
+
+
+<!doctype html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>&lt;no title&gt; &#8212;   documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="../_static/bizstyle.css?v=532c1bf3" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=89e52957" />
+    
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/bizstyle.js"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="nav-item nav-item-0"><a href="../index.html">  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">&lt;no title&gt;</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Tuning
+#</p></th>
+<th class="head"><p>Tuning outline</p></th>
+<th class="head"><p>Tuning method</p></th>
+<th class="head"><p>Classification of tuning</p></th>
+<th class="head"><p>Target function</p></th>
+<th class="head"><p>Measurement region</p></th>
+<th class="head"><p>Section #</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>1</p></td>
+<td><p>Loop collapse, and unrolling for loops
+with small iteration counts</p></td>
+<td><p>Change the source code</p></td>
+<td><p>Reduction in the number of instructions</p></td>
+<td><p>calc_function_1</p></td>
+<td><p>Solving the system of equations</p></td>
+<td><p>―</p></td>
+</tr>
+<tr class="row-odd"><td><p>2</p></td>
+<td><p>Specifying the prefetch instructions</p></td>
+<td><p>Specify the OCL only</p></td>
+<td><p>Improved data access waiting by hiding latency</p></td>
+<td><p>calc_function_1</p></td>
+<td><p>Solving the system of equations</p></td>
+<td><p>―</p></td>
+</tr>
+<tr class="row-even"><td><p>3</p></td>
+<td><p>Sequential access of addition operations in
+loops</p></td>
+<td><p>Change the source code</p></td>
+<td><p>Improved data access waiting by hiding latency</p></td>
+<td><p>calc_function_1</p></td>
+<td><p>Solving the system of equations</p></td>
+<td><p>―</p></td>
+</tr>
+<tr class="row-odd"><td><p>4</p></td>
+<td><p>Loop unrolling</p></td>
+<td><p>Change the source code</p></td>
+<td><p>Reduction in the number of instructions, and Improved instruction scheduling with loop optimization</p></td>
+<td><p>calc_function_1</p></td>
+<td><p>Solving the system of equations</p></td>
+<td><p>―</p></td>
+</tr>
+<tr class="row-even"><td><p>5</p></td>
+<td><p>Loop unrolling</p></td>
+<td><p>Change the source code</p></td>
+<td><p>Reduction in the number of instructions, and Improved instruction scheduling with loop optimization</p></td>
+<td><p>calc_function_1</p></td>
+<td><p>Solving the system of equations</p></td>
+<td><p>―</p></td>
+</tr>
+<tr class="row-odd"><td><p>6</p></td>
+<td><p>Suppressing the faddv instructions</p></td>
+<td><p>Add extra compile options</p></td>
+<td><p>Reduction in the number of instructions</p></td>
+<td><p>calc_function_1</p></td>
+<td><p>Solving the system of equations</p></td>
+<td><p>―</p></td>
+</tr>
+<tr class="row-even"><td rowspan="2"><p>7</p></td>
+<td rowspan="2"><p>Loop unrolling</p></td>
+<td rowspan="2"><p>Specify the OCL only</p></td>
+<td rowspan="2"><p>Reduction in the number of instructions, and Improved instruction scheduling with loop optimization</p></td>
+<td><p>make_function_2</p></td>
+<td><p>Making the system of equations</p></td>
+<td rowspan="2"><p>―</p></td>
+</tr>
+<tr class="row-odd"><td><p>make_function_3</p></td>
+<td><p>Making the system of equations</p></td>
+</tr>
+<tr class="row-even"><td><p>8</p></td>
+<td><p>Reordering off-diagonal elements in matrixes</p></td>
+<td><p>Change the source code</p></td>
+<td><p>Sequential access</p></td>
+<td><p>calc_function_1</p></td>
+<td><p>Solving the system of equations</p></td>
+<td><p>―</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="5"><p>9</p></td>
+<td rowspan="5"><p>Suppression of SIMDization for loops
+with small iteration counts</p></td>
+<td rowspan="5"><p>Specify the OCL only</p></td>
+<td rowspan="5"><p>Reduction in the number of instructions</p></td>
+<td><p>calc_function_3</p></td>
+<td><p>Solving the system of equations</p></td>
+<td rowspan="5"><p>―</p></td>
+</tr>
+<tr class="row-even"><td><p>make_function_1</p></td>
+<td><p>Making the system of equations</p></td>
+</tr>
+<tr class="row-odd"><td><p>make_function_4</p></td>
+<td><p>Making the system of equations</p></td>
+</tr>
+<tr class="row-even"><td><p>make_function_5</p></td>
+<td><p>Making the system of equations</p></td>
+</tr>
+<tr class="row-odd"><td><p>make_function_6</p></td>
+<td><p>Making the system of equations</p></td>
+</tr>
+<tr class="row-even"><td><p>10</p></td>
+<td><p>SIMDization of division operations and
+suppression of SIMDization for loops
+with small iteration counts</p></td>
+<td><p>Change the source code</p></td>
+<td><p>Improved operation wait for facilitation of SIMDization</p></td>
+<td><p>calc_function_3</p></td>
+<td><p>Solving the system of equations</p></td>
+<td><p>Section 4.1</p></td>
+</tr>
+<tr class="row-odd"><td><p>11</p></td>
+<td><p>Reducing load and store operations
+of data by loop unrolling</p></td>
+<td><p>Change the source code</p></td>
+<td><p>Reduction in the number of instructions, and Improved instruction scheduling with loop optimization</p></td>
+<td><p>calc_function_1</p></td>
+<td><p>Solving the system of equations</p></td>
+<td><p>Section 4.2</p></td>
+</tr>
+<tr class="row-even"><td><p>12</p></td>
+<td><p>Loop unswitching</p></td>
+<td><p>Specify the OCL only</p></td>
+<td><p>Improved data access waiting by hiding latency</p></td>
+<td><p>make_function_5</p></td>
+<td><p>Making the system of equations</p></td>
+<td><p>―</p></td>
+</tr>
+<tr class="row-odd"><td><p>13</p></td>
+<td><p>Loop unrolling</p></td>
+<td><p>Specify the OCL only</p></td>
+<td><p>Reduction in the number of instructions, and Improved instruction scheduling with loop optimization</p></td>
+<td><p>make_function_2</p></td>
+<td><p>Making the system of equations</p></td>
+<td><p>―</p></td>
+</tr>
+<tr class="row-even"><td><p>14</p></td>
+<td><p>Changing the parameters of domain
+decomposition of input models</p></td>
+<td><p>Change settings at execution</p></td>
+<td><p>Improved the load balance between MPI processes</p></td>
+<td><p>―</p></td>
+<td><p>―</p></td>
+<td><p>―</p></td>
+</tr>
+<tr class="row-odd"><td><p>15</p></td>
+<td><p>Removing extra type conversion instructions</p></td>
+<td><p>Change the source code</p></td>
+<td><p>Reduction in the number of instructions</p></td>
+<td><p>make_function_2</p></td>
+<td><p>Making the system of equations</p></td>
+<td><p>―</p></td>
+</tr>
+<tr class="row-even"><td><p>16</p></td>
+<td><p>SIMDization by loop collapse</p></td>
+<td><p>Change the source code</p></td>
+<td><p>Improved operation wait for facilitation of SIMDization</p></td>
+<td><p>make_function_6</p></td>
+<td><p>Making the system of equations</p></td>
+<td><p>Section 4.3</p></td>
+</tr>
+<tr class="row-odd"><td><p>17</p></td>
+<td><p>SIMDization by loop fission</p></td>
+<td><p>Change the source code</p></td>
+<td><p>Improved operation wait for facilitation of SIMDization</p></td>
+<td><p>make_function_2</p></td>
+<td><p>Making the system of equations</p></td>
+<td><p>―</p></td>
+</tr>
+<tr class="row-even"><td rowspan="7"><p>18</p></td>
+<td rowspan="7"><p>Inline expansion</p></td>
+<td rowspan="7"><p>Change the source code</p></td>
+<td rowspan="7"><p>Reduction in the number of instructions</p></td>
+<td><p>limiter_function_1</p></td>
+<td><p>Limiter functions processes</p></td>
+<td rowspan="7"><p>―</p></td>
+</tr>
+<tr class="row-odd"><td><p>make_function_1</p></td>
+<td><p>Making the system of equations</p></td>
+</tr>
+<tr class="row-even"><td><p>make_function_4</p></td>
+<td><p>Making the system of equations</p></td>
+</tr>
+<tr class="row-odd"><td><p>make_function_9</p></td>
+<td><p>Making the system of equations</p></td>
+</tr>
+<tr class="row-even"><td><p>calc_function_2</p></td>
+<td><p>Solving the system of equations</p></td>
+</tr>
+<tr class="row-odd"><td><p>calc_function_3</p></td>
+<td><p>Solving the system of equations</p></td>
+</tr>
+<tr class="row-even"><td><p>calc_function_5</p></td>
+<td><p>Solving the system of equations</p></td>
+</tr>
+<tr class="row-odd"><td><p>19</p></td>
+<td><p>Changing the access direction of arrays</p></td>
+<td><p>Change the source code</p></td>
+<td><p>Improved data access waiting by hiding latency</p></td>
+<td><p>othSolv_function_3</p></td>
+<td><p>Processing the equations other
+than system of equations</p></td>
+<td><p>Section 4.4</p></td>
+</tr>
+<tr class="row-even"><td><p>20</p></td>
+<td><p>Movement of invariant expressions</p></td>
+<td><p>Change the source code</p></td>
+<td><p>Improve waiting for operations by hiding latency</p></td>
+<td><p>make_function_8</p></td>
+<td><p>Making the system of equations</p></td>
+<td><p>―</p></td>
+</tr>
+<tr class="row-odd"><td><p>21</p></td>
+<td><p>Loop fission</p></td>
+<td><p>Change the source code</p></td>
+<td><p>Reduction in the number of instructions, and Improved instruction scheduling with loop optimization</p></td>
+<td><p>make_function_8</p></td>
+<td><p>Making the system of equations</p></td>
+<td><p>―</p></td>
+</tr>
+<tr class="row-even"><td><p>22</p></td>
+<td><p>Allocating some arrays in loops to register</p></td>
+<td><p>Change the source code</p></td>
+<td><p>Improved data access waiting by hiding latency</p></td>
+<td><p>make_function_8</p></td>
+<td><p>Making the system of equations</p></td>
+<td><p>―</p></td>
+</tr>
+<tr class="row-odd"><td><p>23</p></td>
+<td><p>Reducing the extra cost in calculation
+operations</p></td>
+<td><p>Change the source code</p></td>
+<td><p>Reduction in the number of instructions</p></td>
+<td><p>make_function_8</p></td>
+<td><p>Making the system of equations</p></td>
+<td><p>―</p></td>
+</tr>
+<tr class="row-even"><td><p>24</p></td>
+<td><p>SIMDization by SVE ACLE</p></td>
+<td><p>Change the source code</p></td>
+<td><p>Improved operation wait for facilitation of SIMDization</p></td>
+<td><p>calc_function_4</p></td>
+<td><p>Solving the system of equations</p></td>
+<td><p>Section 4.5</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="3"><p>25</p></td>
+<td rowspan="3"><p>Built-in prefetch</p></td>
+<td rowspan="3"><p>Change the source code</p></td>
+<td rowspan="3"><p>Improved data access waiting by hiding latency</p></td>
+<td><p>make_function_2</p></td>
+<td><p>Making the system of equations</p></td>
+<td rowspan="3"><p>Section 4.6</p></td>
+</tr>
+<tr class="row-even"><td><p>make_function_3</p></td>
+<td><p>Making the system of equations</p></td>
+</tr>
+<tr class="row-odd"><td><p>make_function_7</p></td>
+<td><p>Making the system of equations</p></td>
+</tr>
+<tr class="row-even"><td><p>26</p></td>
+<td><p>Allocating some arrays to static arrays
+for SIMDization</p></td>
+<td><p>Change the source code</p></td>
+<td><p>Improved operation wait for facilitation of SIMDization</p></td>
+<td><p>calc_function_1</p></td>
+<td><p>Solving the system of equations</p></td>
+<td><p>―</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="2"><p>27</p></td>
+<td rowspan="2"><p>Using CLONE specifier, and loop unrolling</p></td>
+<td rowspan="2"><p>Change the source code</p></td>
+<td rowspan="2"><p>Improved data access waiting by hiding latency</p></td>
+<td><p>make_function_6</p></td>
+<td><p>Making the system of equations</p></td>
+<td rowspan="2"><p>―</p></td>
+</tr>
+<tr class="row-even"><td><p>make_function_12</p></td>
+<td><p>Making the system of equations</p></td>
+</tr>
+<tr class="row-odd"><td><p>28</p></td>
+<td><p>Moving division operations to outside of the
+loop, and applying SIMDization to the
+division operations</p></td>
+<td><p>Change the source code</p></td>
+<td><p>Improved operation wait for facilitation of SIMDization</p></td>
+<td><p>make_function_7</p></td>
+<td><p>Making the system of equations</p></td>
+<td><p>Section 4.7</p></td>
+</tr>
+<tr class="row-even"><td rowspan="3"><p>29</p></td>
+<td rowspan="3"><p>Built-in prefetch</p></td>
+<td rowspan="3"><p>Change the source code</p></td>
+<td rowspan="3"><p>Improved data access waiting by hiding latency</p></td>
+<td><p>othSolv_function_1</p></td>
+<td><p>Processing the equations other
+than system of equations</p></td>
+<td rowspan="3"><p>―</p></td>
+</tr>
+<tr class="row-odd"><td><p>othSolv_function_2</p></td>
+<td><p>Processing the equations other
+than system of equations</p></td>
+</tr>
+<tr class="row-even"><td><p>othSolv_function_5</p></td>
+<td><p>Processing the equations other
+than system of equations</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="2"><p>30</p></td>
+<td rowspan="2"><p>SIMDization by inline expansion</p></td>
+<td rowspan="2"><p>Change the source code</p></td>
+<td rowspan="2"><p>Improved operation wait for facilitation of SIMDization</p></td>
+<td><p>function_1</p></td>
+<td><p>Processing the equations other
+than system of equations</p></td>
+<td rowspan="2"><p>―</p></td>
+</tr>
+<tr class="row-even"><td><p>function_2</p></td>
+<td><p>Processing the equations other
+than system of equations</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="2"><p>31</p></td>
+<td rowspan="2"><p>Thread parallelization</p></td>
+<td rowspan="2"><p>Change the source code</p></td>
+<td rowspan="2"><p>Thread parallelization</p></td>
+<td><p>calc_function_1</p></td>
+<td><p>Solving the system of equations</p></td>
+<td rowspan="2"><p>―</p></td>
+</tr>
+<tr class="row-even"><td><p>make_function_7</p></td>
+<td><p>Making the system of equations</p></td>
+</tr>
+<tr class="row-odd"><td><p>32</p></td>
+<td><p>Improving load instructions scheduling</p></td>
+<td><p>Change the source code</p></td>
+<td><p>Improved instruction scheduling with loop optimization</p></td>
+<td><p>othSolv_function_4</p></td>
+<td><p>Processing the equations other</p></td>
+<td><p>―</p></td>
+</tr>
+<tr class="row-even"><td><p>33</p></td>
+<td><p>Moving invariant expressions to outside of
+the loop</p></td>
+<td><p>Change the source code</p></td>
+<td><p>Improved instruction scheduling with loop optimization</p></td>
+<td><p>calc_function_2</p></td>
+<td><p>Solving the system of equations</p></td>
+<td><p>Section 4.8</p></td>
+</tr>
+<tr class="row-odd"><td><p>34</p></td>
+<td><p>Loop unrolling manually instead of OCLs</p></td>
+<td><p>Change the source code</p></td>
+<td><p>Reduction in the number of instructions, and Improved instruction scheduling with loop optimization</p></td>
+<td><p>calc_function_4</p></td>
+<td><p>Solving the system of equations</p></td>
+<td><p>Section 4.9</p></td>
+</tr>
+<tr class="row-even"><td rowspan="2"><p>35</p></td>
+<td rowspan="2"><p>Allocating some arrays in loops to register</p></td>
+<td rowspan="2"><p>Change the source code</p></td>
+<td rowspan="2"><p>Improved data access waiting by hiding latency</p></td>
+<td><p>calc_function_4</p></td>
+<td><p>Solving the system of equations</p></td>
+<td rowspan="2"><p>―</p></td>
+</tr>
+<tr class="row-odd"><td><p>calc_function_5</p></td>
+<td><p>Solving the system of equations</p></td>
+</tr>
+<tr class="row-even"><td><p>36</p></td>
+<td><p>Loop interleaving</p></td>
+<td><p>Change the source code</p></td>
+<td><p>Improve waiting for operations by hiding latency</p></td>
+<td><p>calc_function_1</p></td>
+<td><p>Solving the system of equations</p></td>
+<td><p>―</p></td>
+</tr>
+<tr class="row-odd"><td><p>37</p></td>
+<td><p>Removing extra type conversion instruction</p></td>
+<td><p>Change the source code</p></td>
+<td><p>Reduction in the number of instructions</p></td>
+<td><p>calc_function_1</p></td>
+<td><p>Solving the system of equations</p></td>
+<td><p>―</p></td>
+</tr>
+<tr class="row-even"><td><p>38</p></td>
+<td><p>Specifying the prefetch instructions</p></td>
+<td><p>Change the source code</p></td>
+<td><p>Improved data access waiting by hiding latency</p></td>
+<td><p>calc_function_1</p></td>
+<td><p>Solving the system of equations</p></td>
+<td><p>―</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="2"><p>39</p></td>
+<td rowspan="2"><p>Loop collapse</p></td>
+<td rowspan="2"><p>Change the source code</p></td>
+<td rowspan="2"><p>Improved instruction scheduling with loop optimization</p></td>
+<td><p>make_function_6</p></td>
+<td><p>Making the system of equations</p></td>
+<td rowspan="2"><p>―</p></td>
+</tr>
+<tr class="row-even"><td><p>make_function_5</p></td>
+<td><p>Making the system of equations</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="3"><p>40</p></td>
+<td rowspan="3"><p>Using CLONE specifier, and inline expansion</p></td>
+<td rowspan="3"><p>Change the source code</p></td>
+<td rowspan="3"><p>Reduction in the number of instructions, and Improved instruction scheduling with loop optimization</p></td>
+<td><p>make_function_6</p></td>
+<td><p>Making the system of equations</p></td>
+<td rowspan="3"><p>―</p></td>
+</tr>
+<tr class="row-even"><td><p>make_function_5</p></td>
+<td><p>Making the system of equations</p></td>
+</tr>
+<tr class="row-odd"><td><p>make_function_7</p></td>
+<td><p>Making the system of equations</p></td>
+</tr>
+<tr class="row-even"><td rowspan="7"><p>41</p></td>
+<td rowspan="7"><p>Improving the memory placement of
+two-dimensional arrays for sequential access</p></td>
+<td rowspan="7"><p>Change the source code</p></td>
+<td rowspan="7"><p>Sequential access</p></td>
+<td><p>allocate_array</p></td>
+<td><p>(the entire Application)</p></td>
+<td rowspan="7"><p>Section 4.10</p></td>
+</tr>
+<tr class="row-odd"><td><p>clear_array</p></td>
+<td><p>(the entire Application)</p></td>
+</tr>
+<tr class="row-even"><td><p>deallocate_array</p></td>
+<td><p>(the entire Application)</p></td>
+</tr>
+<tr class="row-odd"><td><p>reallocate_array</p></td>
+<td><p>(the entire Application)</p></td>
+</tr>
+<tr class="row-even"><td><p>allocate_array_2</p></td>
+<td><p>(the entire Application)</p></td>
+</tr>
+<tr class="row-odd"><td><p>deallocate_array_2</p></td>
+<td><p>(the entire Application)</p></td>
+</tr>
+<tr class="row-even"><td><p>reallocate_array_2</p></td>
+<td><p>(the entire Application)</p></td>
+</tr>
+<tr class="row-odd"><td><p>42</p></td>
+<td><p>SIMDization based on the Tuning #41</p></td>
+<td><p>Change the source code</p></td>
+<td><p>Improved operation wait for facilitation of SIMDization</p></td>
+<td><p>calc_function_1</p></td>
+<td><p>Solving the system of equations</p></td>
+<td><p>―</p></td>
+</tr>
+<tr class="row-even"><td><p>43</p></td>
+<td><p>Using CLONE specifier</p></td>
+<td><p>Change the source code</p></td>
+<td><p>Improved instruction scheduling with loop optimization</p></td>
+<td><p>make_function_7</p></td>
+<td><p>Making the system of equations</p></td>
+<td><p>―</p></td>
+</tr>
+<tr class="row-odd"><td><p>44</p></td>
+<td><p>Suppression of SIMDization for loops which
+has built-in prefetch functions</p></td>
+<td><p>Specify the OCL only</p></td>
+<td><p>Reduction in the number of instructions</p></td>
+<td><p>make_function_7</p></td>
+<td><p>Making the system of equations</p></td>
+<td><p>―</p></td>
+</tr>
+</tbody>
+</table>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="nav-item nav-item-0"><a href="../index.html">  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">&lt;no title&gt;</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, RIKEN Center for Computational Science.
+    &nbsp;&nbsp;<a href="https://www.fugaku.r-ccs.riken.jp/">Fugaku Portal Top</a>
+    </div>
+  </body>
+</html>

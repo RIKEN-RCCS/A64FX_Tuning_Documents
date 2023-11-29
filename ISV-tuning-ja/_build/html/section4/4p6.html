@@ -1,0 +1,146 @@
+
+
+<!doctype html>
+
+<html lang="ja" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>4.6. ビルトインプリフェッチ &#8212;   ドキュメント</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="../_static/bizstyle.css?v=532c1bf3" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=89e52957" />
+    
+    <script src="../_static/documentation_options.js?v=c033477b"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/translations.js?v=4dbe4bdc"></script>
+    <script src="../_static/bizstyle.js"></script>
+    <link rel="search" title="検索" href="../search.html" />
+    <link rel="next" title="4.7. 除算処理をループの外側に移動しSIMD化" href="4p7.html" />
+    <link rel="prev" title="4.5. SVE ACLEによるSIMD化" href="4p5.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="4p7.html" title="4.7. 除算処理をループの外側に移動しSIMD化"
+             accesskey="N">次へ</a></li>
+        <li class="right" >
+          <a href="4p5.html" title="4.5. SVE ACLEによるSIMD化"
+             accesskey="P">前へ</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  ドキュメント</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U"><span class="section-number">4. </span>チューニング項目</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.6. </span>ビルトインプリフェッチ</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="p6">
+<span id="id1"></span><h1><span class="section-number">4.6. </span>ビルトインプリフェッチ<a class="headerlink" href="#p6" title="Link to this heading">¶</a></h1>
+<section id="id2">
+<span id="id3"></span><h2><span class="section-number">4.6.1. </span>チューニング対象<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>本節で対象とした make_function_3 関数は、「システム方程式マトリクス構築」の計測区間に含まれ、チューニング実施前のアプリケーション全体の約1.7％のコストを占めている関数です。</p>
+<p>本節のチューニングは make_function_2 関数、make_function_7 関数にも実施しましたが、分析内容やチューニング内容は make_function_3 関数に実施した内容と同様のため、本節では make_function_3 関数を例に説明します。</p>
+</section>
+<section id="id4">
+<span id="id5"></span><h2><span class="section-number">4.6.2. </span>分析<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>make_function_3 関数を分析した結果、下記の①ループに着目しました。このループの特徴は以下の通りです。</p>
+<ul class="simple">
+<li><p>詳細プロファイラでループを分析したところ、L1 と L2 のキャッシュ待ち時間が発生しています。（4.6.4項のチューニング実施前の結果を参照してください）</p></li>
+<li><p>make_function_3 関数の配列 x が非連続なアクセスで、キャッシュミスを起こしていると考えられます。</p></li>
+</ul>
+<p>[チューニング実施前の make_function_3 関数とその呼び出し元のソースコードの抜粋]</p>
+<p><a class="reference internal" href="../_images/image15.png"><img alt="image15" src="../_images/image15.png" style="width: 557.25px; height: 350.25px;" /></a></p>
+</section>
+<section id="id6">
+<span id="id7"></span><h2><span class="section-number">4.6.3. </span>実施<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<p>分析結果を踏まえて、以下のチューニングを実施しました。</p>
+<ul class="simple">
+<li><p>L1 と L2 キャッシュのキャッシュ待ち時間短縮のため、make_function_3 関数の呼び出し元に、プリフェッチを行うビルトイン関数を追加し、利用するデータを予めキャッシュにプリフェッチしておきます。このビルトイン関数は、コンパイラがサポートする GNU C/C++ 拡張仕様の１つです。</p></li>
+</ul>
+<p>[チューニング実施後の make_function_3 関数の呼び出し元のソースコードの抜粋]</p>
+<p><a class="reference internal" href="../_images/image16.png"><img alt="image16" src="../_images/image16.png" style="width: 686.5px; height: 392.25px;" /></a></p>
+<p><a class="reference internal" href="../_images/image17.png"><img alt="image17" src="../_images/image17.png" style="width: 759.0px; height: 295.0px;" /></a></p>
+</section>
+<section id="id8">
+<span id="id9"></span><h2><span class="section-number">4.6.4. </span>効果の検証<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h2>
+<p>実施したチューニングを評価するために、詳細プロファイラで出力した、make_function_3 関数の Cycle Accounting（プログラムの実行時間の内訳）を、チューニング実施前後で比較しました。</p>
+<p><a class="reference internal" href="../_images/image18.png"><img alt="image18" src="../_images/image18.png" style="width: 845.1px; height: 412.38px;" /></a></p>
+<p>上記グラフのうち、チューニング実施前後の計測結果の中で最も実行時間が長い Process 441 に着目すると、実行時間は8.40秒から6.15秒に短縮し、約27％性能が改善しました。実行時間の内訳をみると「Floating-point load L2 cache access wait」「Floating-point load memory access wait」「Integer load memory access wait」が特に改善しており、これは本節のチューニングによるプリフェッチの効果と考えられます。</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">目次</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">4.6. ビルトインプリフェッチ</a><ul>
+<li><a class="reference internal" href="#id2">4.6.1. チューニング対象</a></li>
+<li><a class="reference internal" href="#id4">4.6.2. 分析</a></li>
+<li><a class="reference internal" href="#id6">4.6.3. 実施</a></li>
+<li><a class="reference internal" href="#id8">4.6.4. 効果の検証</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>前のトピックへ</h4>
+    <p class="topless"><a href="4p5.html"
+                          title="前の章へ"><span class="section-number">4.5. </span>SVE ACLEによるSIMD化</a></p>
+  </div>
+  <div>
+    <h4>次のトピックへ</h4>
+    <p class="topless"><a href="4p7.html"
+                          title="次の章へ"><span class="section-number">4.7. </span>除算処理をループの外側に移動しSIMD化</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">クイック検索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="検索" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="4p7.html" title="4.7. 除算処理をループの外側に移動しSIMD化"
+             >次へ</a></li>
+        <li class="right" >
+          <a href="4p5.html" title="4.5. SVE ACLEによるSIMD化"
+             >前へ</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  ドキュメント</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" ><span class="section-number">4. </span>チューニング項目</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.6. </span>ビルトインプリフェッチ</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, 理化学研究所計算科学研究センター.
+    &nbsp;&nbsp;<a href="https://www.fugaku.r-ccs.riken.jp/">Fugaku Portal Top</a>
+    </div>
+  </body>
+</html>

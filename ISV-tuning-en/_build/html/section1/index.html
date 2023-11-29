@@ -1,0 +1,165 @@
+
+
+<!doctype html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>1. Introduction &#8212;   documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="../_static/bizstyle.css?v=532c1bf3" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=89e52957" />
+    
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/bizstyle.js"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="2. Target performance and procedure of tuning" href="../section2/index.html" />
+    <link rel="prev" title="Case Study: Performance Tuning of ISV Application" href="../index.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../section2/index.html" title="2. Target performance and procedure of tuning"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="../index.html" title="Case Study: Performance Tuning of ISV Application"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">1. </span>Introduction</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="introduction">
+<span id="section1"></span><h1><span class="section-number">1. </span>Introduction<a class="headerlink" href="#introduction" title="Link to this heading">¶</a></h1>
+<section id="purpose-of-this-document">
+<h2><span class="section-number">1.1. </span>Purpose of this document<a class="headerlink" href="#purpose-of-this-document" title="Link to this heading">¶</a></h2>
+<p>RIKEN has been operating the supercomputer Fugaku since March 2021. As
+part of its work to support users of Fugaku, RIKEN has positioned the
+development of documents from various perspectives for effective use of
+Fugaku as an important mission. RIKEN has provided users with a wide
+range of documents (e.g. Fugaku user’s guide, program language manual,
+user’s guide for various tools, and programming guide for improving
+performance.) that enable them to easily start using Fugaku and use
+advanced technology depending on their level of proficiency.</p>
+<p>As part of the document development of RIKEN, in this document, a case
+of performance tuning of a commercial application software, which is
+developed and released by an Independent Software Vendor (ISV), is
+introduced. This case of tuning was conducted by Fujitsu Limited for the
+A64FX processor, which is also used in Fugaku, in cooperation with an
+ISV who developed the application software.</p>
+<p>Commercial applications software, including the application software
+described in this document, are typically more feature-rich than
+open-source software, and their source codes are larger and more complex.
+Therefore, it was believed that this case of tuning of the commercial
+application software is useful for Fugaku users who want to tune a
+practical program being large and complex, then an excerpt of key points
+of the tuning is introduced.</p>
+</section>
+<section id="application-software-to-be-tuned">
+<h2><span class="section-number">1.2. </span>Application software to be tuned<a class="headerlink" href="#application-software-to-be-tuned" title="Link to this heading">¶</a></h2>
+<p>The application software discussed in this document (hereafter referred to as Application) is a
+commercial CFD application software for a general purpose thermal-fluid
+simulation, which is used in a wide range of industries, such as
+aerodynamic analysis around car bodies and thermal conduction analysis
+of electronic equipment. The Application has many features, including
+support for various fluid models, and like most commercial applications
+software, its source code is large and has complex structure.</p>
+<p>In recent years, there has been an increasing trend in the industry to
+perform high-accuracy, large-scale simulations, such as high-definition
+analyses of models with complex shapes. For the Application as well, to
+perform such high-accuracy, large-scale simulations, users are
+demanding that hundreds of thousands of parallel computing resources can
+be utilized. Soon, it is expected that utilizing of larger-scale
+computing resources will be demanded.</p>
+<p>Therefore, the ISV who developed the Application has looked to Fugaku
+having massive computing resources. To perform high-accuracy,
+large-scale simulations with the Application on Fugaku, it was necessary
+to (1) improve performance to execute simulations in a realistic time,
+and (2) enable simulations with hundreds of thousands of computing
+resources. To achieve these two goals and achieve a large-scale
+simulation using Fugaku, performance tuning of the Application was
+conducted in collaboration with the ISV.</p>
+<p>Note that describing the details of this Application and the source
+code, including function and/or variable names used in the Application,
+is prohibited because the ISV’s intellectual property rights may be
+included. Therefore, the information described in this document,
+including source code, has been modified or simplified for the purpose
+of discussing the tuning.</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">1. Introduction</a><ul>
+<li><a class="reference internal" href="#purpose-of-this-document">1.1. Purpose of this document</a></li>
+<li><a class="reference internal" href="#application-software-to-be-tuned">1.2. Application software to be tuned</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="../index.html"
+                          title="previous chapter">Case Study: Performance Tuning of ISV Application</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="../section2/index.html"
+                          title="next chapter"><span class="section-number">2. </span>Target performance and procedure of tuning</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../section2/index.html" title="2. Target performance and procedure of tuning"
+             >next</a></li>
+        <li class="right" >
+          <a href="../index.html" title="Case Study: Performance Tuning of ISV Application"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">1. </span>Introduction</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, RIKEN Center for Computational Science.
+    &nbsp;&nbsp;<a href="https://www.fugaku.r-ccs.riken.jp/">Fugaku Portal Top</a>
+    </div>
+  </body>
+</html>

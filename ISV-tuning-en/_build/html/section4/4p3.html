@@ -1,0 +1,187 @@
+
+
+<!doctype html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>4.3. SIMDization by loop collapse &#8212;   documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="../_static/bizstyle.css?v=532c1bf3" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=89e52957" />
+    
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/bizstyle.js"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="4.4. Changing the access direction of arrays" href="4p4.html" />
+    <link rel="prev" title="4.2. Reducing load and store operations of data by loop unrolling" href="4p2.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="4p4.html" title="4.4. Changing the access direction of arrays"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="4p2.html" title="4.2. Reducing load and store operations of data by loop unrolling"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U"><span class="section-number">4. </span>Tuning items</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.3. </span>SIMDization by loop collapse</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="simdization-by-loop-collapse">
+<span id="p3"></span><h1><span class="section-number">4.3. </span>SIMDization by loop collapse<a class="headerlink" href="#simdization-by-loop-collapse" title="Link to this heading">¶</a></h1>
+<section id="target-for-this-tuning">
+<span id="target-for-this-tuning-2"></span><h2><span class="section-number">4.3.1. </span>Target for this tuning<a class="headerlink" href="#target-for-this-tuning" title="Link to this heading">¶</a></h2>
+<p>The target for tuning in this section is the function “make_function_6”,
+which is in the measurement region “Making the system of equations”.
+In the initial version of the Application, the cost of this function was
+1.2% of that of the entire Application.</p>
+</section>
+<section id="analysis">
+<span id="analysis-2"></span><h2><span class="section-number">4.3.2. </span>Analysis<a class="headerlink" href="#analysis" title="Link to this heading">¶</a></h2>
+<p>The following nested loop was selected as a target after the analysis of
+the function “make_function_6”. The key points of this source code are
+as follows:</p>
+<ul class="simple">
+<li><p>The loop (1) in the following source code was not SIMDized.</p></li>
+<li><p>The iteration count of each loop (1) and (2) was 5 (constant with
+this model).</p></li>
+</ul>
+<p>[Some lines from function “make_function_6” before this tuning was
+performed]</p>
+<p><a class="reference internal" href="../_images/image6.png"><img alt="image6" src="../_images/image6.png" style="width: 558.75px; height: 159.0px;" /></a></p>
+</section>
+<section id="tuning">
+<span id="tuning-2"></span><h2><span class="section-number">4.3.3. </span>Tuning<a class="headerlink" href="#tuning" title="Link to this heading">¶</a></h2>
+<p>The following tuning was performed.</p>
+<ul class="simple">
+<li><p>The nested loop was divided into two loops (3) and (4) as seen in the
+following source code, whose iteration count was 5 and 25
+respectively. The latter one was composed of the nested loop by “i”
+and “j”, but collapsed manually.</p></li>
+<li><p>In order to facilitate the SIMDization, the OCL for suppressing loop
+unrolling was specified for the collapsed loop.</p></li>
+</ul>
+<p>[Some lines from function “make_function_6” after this tuning was
+performed]</p>
+<p><a class="reference internal" href="../_images/image7.png"><img alt="image7" src="../_images/image7.png" style="width: 769.25px; height: 320.5px;" /></a></p>
+</section>
+<section id="evaluation-of-the-performance">
+<span id="evaluation-of-the-performance-3"></span><h2><span class="section-number">4.3.4. </span>Evaluation of the performance<a class="headerlink" href="#evaluation-of-the-performance" title="Link to this heading">¶</a></h2>
+<p>To evaluate the effect of this tuning, cost information (output by fipp)
+of the entire Application and target function before performing this
+tuning was compared with that after performing this tuning.</p>
+<p>The following table represents the cost measurement results by fipp.
+This tuning reduced the cost of the function “make_function_6” by 31.2%
+and the entire Application cost by 2.1%.</p>
+<p>[Cost measurement results by fipp]</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head" rowspan="2"></th>
+<th class="head" colspan="2"><p>Cost</p></th>
+<th class="head" rowspan="2"><p>Performance
+improvement
+rate((A-B)/A)</p></th>
+</tr>
+<tr class="row-even"><th class="head"><p>Before performing this tuning
+of this section (A)</p></th>
+<th class="head"><p>After performing this tuning
+of this section (B)</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-odd"><td><p>the entire Application</p></td>
+<td><p>1577140</p></td>
+<td><p>1544039</p></td>
+<td><p>2.1%</p></td>
+</tr>
+<tr class="row-even"><td><p>make_function_6</p></td>
+<td><p>113984</p></td>
+<td><p>78416</p></td>
+<td><p>31.2%</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">4.3. SIMDization by loop collapse</a><ul>
+<li><a class="reference internal" href="#target-for-this-tuning">4.3.1. Target for this tuning</a></li>
+<li><a class="reference internal" href="#analysis">4.3.2. Analysis</a></li>
+<li><a class="reference internal" href="#tuning">4.3.3. Tuning</a></li>
+<li><a class="reference internal" href="#evaluation-of-the-performance">4.3.4. Evaluation of the performance</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="4p2.html"
+                          title="previous chapter"><span class="section-number">4.2. </span>Reducing load and store operations of data by loop unrolling</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="4p4.html"
+                          title="next chapter"><span class="section-number">4.4. </span>Changing the access direction of arrays</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="4p4.html" title="4.4. Changing the access direction of arrays"
+             >next</a></li>
+        <li class="right" >
+          <a href="4p2.html" title="4.2. Reducing load and store operations of data by loop unrolling"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" ><span class="section-number">4. </span>Tuning items</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.3. </span>SIMDization by loop collapse</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, RIKEN Center for Computational Science.
+    &nbsp;&nbsp;<a href="https://www.fugaku.r-ccs.riken.jp/">Fugaku Portal Top</a>
+    </div>
+  </body>
+</html>

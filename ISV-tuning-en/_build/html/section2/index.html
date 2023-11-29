@@ -1,0 +1,258 @@
+
+
+<!doctype html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>2. Target performance and procedure of tuning &#8212;   documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="../_static/bizstyle.css?v=532c1bf3" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=89e52957" />
+    
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/bizstyle.js"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="3. Tuning details and results" href="../section3/index.html" />
+    <link rel="prev" title="1. Introduction" href="../section1/index.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../section3/index.html" title="3. Tuning details and results"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="../section1/index.html" title="1. Introduction"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">2. </span>Target performance and procedure of tuning</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="target-performance-and-procedure-of-tuning">
+<span id="section2"></span><h1><span class="section-number">2. </span>Target performance and procedure of tuning<a class="headerlink" href="#target-performance-and-procedure-of-tuning" title="Link to this heading">¶</a></h1>
+<p>This chapter describes the target performance, conditions, and the
+procedure for tuning the Application.</p>
+<section id="target-performance-and-conditions">
+<h2><span class="section-number">2.1. </span>Target performance and conditions<a class="headerlink" href="#target-performance-and-conditions" title="Link to this heading">¶</a></h2>
+<p>The followings are the target performance and conditions for tuning the
+Application.</p>
+<ul>
+<li><p>Target performance</p>
+<p>The execution time of the initial A64FX version of the Application
+was about two times longer than the x86 version. Therefore, to
+achieve the same or better than the performance of the x86 version,
+the target performance was decided to reduce the execution time by
+more than half.</p>
+</li>
+<li><p>Conditions</p>
+<p>The followings are the conditions in this tuning work.</p>
+<ul>
+<li><p>Compilation</p>
+<ul class="simple">
+<li><p>Version: tcsds-1.2.26</p></li>
+<li><p>Options: -Ofast -flto -ffj-ocl -Nclang -Koptmsg=2
+-funsafe-math-optimizations -Wno-comment -Nlst=t -mllvm</p></li>
+</ul>
+<blockquote>
+<div><p>* After performing thread parallelization, “-Kopenmp” was added to
+the above.</p>
+</div></blockquote>
+</li>
+<li><p>Execution</p>
+<ul>
+<li><p>Computer system: PRIMEHPC FX1000, which has the same architecture
+as Fugaku</p></li>
+<li><p>Version of middleware: tcsds-1.2.26</p></li>
+<li><div class="line-block">
+<div class="line">Parallel number: 480 MPI processes using 480 CPU cores with 10 nodes</div>
+</div>
+<p>* Even after performing thread parallelization, it was executed with
+480 MPI processes and 1 thread per MPI process, unless otherwise
+specified.</p>
+</li>
+<li><p>Model: Aerodynamics of transonic-flow around aircraft (14 million
+cells, steady state analysis)</p>
+<p>* Typically, the calculation of this model requires to be iterated
+until steady state is achieved. But in this case, the number of
+iterations was fixed at 100.
+This model was selected for its ease of performance evaluation. It
+might be smaller than the model used in the larger-scale
+simulations that most users require, but it is expected that tuning
+improvements with this model would also be effective to
+larger-scale simulations.</p>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="procedure-of-tuning">
+<span id="tuningmethods"></span><h2><span class="section-number">2.2. </span>Procedure of tuning<a class="headerlink" href="#procedure-of-tuning" title="Link to this heading">¶</a></h2>
+<p>The following is the procedure of tuning the Application.</p>
+<ol class="arabic">
+<li><p><strong>Evaluate the performance of the Application</strong></p>
+<p>The execution time of the entire Application before performing the
+tuning, this document refers to the version before tuning as the
+initial version, was measured in order to use for comparison with the
+performance after performing the tuning. Also, the execution time of
+each measurement region, which was defined as each algorithm or a
+bulk of algorithms, was measured in order to make it easier to
+evaluate the effects of tuning. The measurement results are described
+in Section 3.1 (<a class="reference internal" href="../section3/index.html#elapsedtime"><span class="std std-ref">Evaluation of the performance</span></a>).</p>
+</li>
+<li><p><strong>Measure the cost of each function</strong></p>
+<p>Since the Application is too large and complex, it was difficult to
+use the fapp (Fujitsu Advanced Performance Profiler) for measuring the
+performance information of the entire Application or the measurement
+region. Therefore, fipp (Fujitsu Instant Performance Profiler) was used for
+measuring the cost of each function in the Application to focus on
+the target functions for tuning, then fapp was used for measuring the
+performance information of such functions or loops (in step 3). The
+measurement results of fipp are described in Section 3.2 (<a class="reference internal" href="../section3/index.html#fippcost"><span class="std std-ref">Cost of each function</span></a>).</p>
+<p>Note that usage of the profiler is described in “Development Studio
+Profiler User’s Guide” on the user portal.</p>
+</li>
+<li><p><strong>Tune the Application</strong></p>
+<p>The following procedure, from 3-1 to 3-4, was repeated to achieve the target performance.
+In this tuning work, each tuning item described in Section 3.3.1 (<a class="reference internal" href="../section3/index.html#tuninglist"><span class="std std-ref">Tuning items</span></a>)
+covers performing a series of steps from 3-1 to 3-4.</p>
+<blockquote>
+<div><p>3-1. <strong>Select the target for tuning</strong></p>
+<blockquote>
+<div><p>The tuning priority was determined based on the cost of each function
+(output by fipp), and the source code was checked starting from the
+function with the high cost, and then functions containing loops with
+potential for performance improvement were selected as targets for
+tuning. On the other hand, some functions, even with low cost, were
+also selected as targets for tuning if it was expected to improve the
+entire Application performance.</p>
+</div></blockquote>
+<p>3-2. <strong>Analyze</strong></p>
+<blockquote>
+<div><p>The functions or loops selected as tuning target in step 3-1 were
+analyzed with the compiler optimization messages and/or the results
+of fapp, and then the tuning plan was determined. In some cases,
+tuning priorities were changed or abandoned in view of the ease of
+tuning and prospects for performance improvement.</p>
+</div></blockquote>
+<p>3-3. <strong>Tune</strong></p>
+<blockquote>
+<div><p>Tuning was performed according to the tuning plan that was
+determined in step 3-2.</p>
+</div></blockquote>
+<p>3-4. <strong>Evaluate</strong></p>
+<blockquote>
+<div><p>The performance after performing the tuning was evaluated using the
+fipp or fapp as follows.</p>
+<ul class="simple">
+<li><p>fipp</p></li>
+</ul>
+<blockquote>
+<div><p>Using fipp, the cost information of target functions and the entire
+Application before performing the tuning of step 3-3 is compared with
+that after performing the tuning.</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>fapp</p></li>
+</ul>
+<blockquote>
+<div><p>Using fapp, after narrowing region of the evaluation, “cycle
+accounting” before performing the tuning of step 3-3 was compared
+with that after performing the tuning. “cycle accounting” represents
+the breakdown of execution time of a program per process. In each
+graph of “cycle accounting” in the following sections, “cycle
+accounting” of 12 processes which were allocated onto one CMG (Core
+Memory Group) was shown. Note that region of the evaluation using
+fapp depends on the tuning items.</p>
+</div></blockquote>
+</div></blockquote>
+</div></blockquote>
+</li>
+<li><p><strong>Measure the performance of the Application</strong></p>
+<p>After performing the tuning, the execution time was measured in the same
+way as in step 1. The measurement results are described in Section
+3.3.2 (<a class="reference internal" href="../section3/index.html#tuningresult"><span class="std std-ref">Tuning results</span></a>). As a result, 44 times of tuning (step 3) and 13 times of
+measuring the performance of the Application (step 4) was performed in
+this tuning work.</p>
+</li>
+</ol>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">2. Target performance and procedure of tuning</a><ul>
+<li><a class="reference internal" href="#target-performance-and-conditions">2.1. Target performance and conditions</a></li>
+<li><a class="reference internal" href="#procedure-of-tuning">2.2. Procedure of tuning</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="../section1/index.html"
+                          title="previous chapter"><span class="section-number">1. </span>Introduction</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="../section3/index.html"
+                          title="next chapter"><span class="section-number">3. </span>Tuning details and results</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../section3/index.html" title="3. Tuning details and results"
+             >next</a></li>
+        <li class="right" >
+          <a href="../section1/index.html" title="1. Introduction"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">2. </span>Target performance and procedure of tuning</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, RIKEN Center for Computational Science.
+    &nbsp;&nbsp;<a href="https://www.fugaku.r-ccs.riken.jp/">Fugaku Portal Top</a>
+    </div>
+  </body>
+</html>

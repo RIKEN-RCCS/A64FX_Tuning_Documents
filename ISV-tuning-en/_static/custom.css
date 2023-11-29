@@ -1,0 +1,45 @@
+//このスタイルシートに追記することでhtmlにデザインを反映できます。
+
+// div.related {
+//     background-color: #a32223;
+//     color: #000;
+// }
+// 
+// div.body h1,
+// div.body h2,
+// div.body h3,
+// div.body h4,
+// div.body h5,
+// div.body h6 {
+//     font-family: Arial, sans-serif;
+//     background-color: #a32223;
+//     font-weight: normal;
+//     color: #ffffff;
+//     margin: 30px 0px 10px 0px;
+//     padding: 5px 0 5px 10px;
+//     text-shadow: 0px 1px 0 white
+// }
+
+
+// 注意、重要などのマークのデザインをカスタマイズをする場合は以下のように記載する
+//div.attention {
+//    background-color: #ffe4e4;
+//    border: 1px solid #f66;
+//}
+//
+//div.important {
+//    background-color: #eee;
+//    border: 1px solid #ccc;
+//}
+
+
+// PREタグが使用されている箇所で文字が横長の場合に改行させる
+// テーマ「sphinx_rtd_theme」では有効になるが他では機能しない
+//pre {
+//    white-space:pre-wrap;
+//    overflow: auto;
+//    overflow-y: hidden;  /* fixes display issues on Chrome browsers */
+//}
+
+
+

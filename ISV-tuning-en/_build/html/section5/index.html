@@ -1,0 +1,112 @@
+
+
+<!doctype html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>5. Summary &#8212;   documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="../_static/bizstyle.css?v=532c1bf3" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=89e52957" />
+    
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/bizstyle.js"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="4.10. Improving the memory placement of two-dimensional arrays for sequential access" href="../section4/4p10.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../section4/4p10.html" title="4.10. Improving the memory placement of two-dimensional arrays for sequential access"
+             accesskey="P">previous</a></li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">5. </span>Summary</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="summary">
+<span id="section5"></span><h1><span class="section-number">5. </span>Summary<a class="headerlink" href="#summary" title="Link to this heading">¶</a></h1>
+<p>This document introduced a case of performance tuning of the commercial
+CFD application software (Application), whose source code is large and
+has complex structure.</p>
+<p>The Application was too large and complex to be analyzed the entire
+application with fapp (Fujitsu Advanced Performance Profiler). Therefore, the
+execution time for each measurement region and the cost of the function
+using fipp (Fujitsu Instant Performance Profiler) was measured at first to
+narrow down functions or loops to be tuned. Then, based on the results
+of fapp measurements of the narrowed functions or loops and the analysis
+of the optimization messages during compilation, the tuning plan was
+determined.</p>
+<p>Another difficulty was that the proportion of the cost of most functions
+in the Application was less than a few percent, so many functions needed
+to be tuned for obtaining the target performance. In the tuning, the top
+30 functions with that cost (sum of their cost was about 52% of the entire
+Application) were analyzed and various types of tuning were performed to
+these functions. Additionally, tuning to improve the load balance
+between MPI processes of the Application and tuning of memory allocation
+functions that are used by many other functions were also performed. In
+fact, this increased tuning effort forced a review of tuning workplan,
+including adding staffs.</p>
+<p>As a result of these effort, the target performance was achieved by
+improving performance rate of 58%, in other words, about 2.4 times
+speedup (execution time was improved from 202.9 seconds to 85.0 seconds)
+compared to the initial version.</p>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="../section4/4p10.html"
+                          title="previous chapter"><span class="section-number">4.10. </span>Improving the memory placement of two-dimensional arrays for sequential access</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../section4/4p10.html" title="4.10. Improving the memory placement of two-dimensional arrays for sequential access"
+             >previous</a></li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">5. </span>Summary</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, RIKEN Center for Computational Science.
+    &nbsp;&nbsp;<a href="https://www.fugaku.r-ccs.riken.jp/">Fugaku Portal Top</a>
+    </div>
+  </body>
+</html>

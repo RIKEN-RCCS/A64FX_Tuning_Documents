@@ -1,0 +1,176 @@
+
+
+<!doctype html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>4.9. Loop unrolling manually instead of OCLs &#8212;   documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="../_static/bizstyle.css?v=532c1bf3" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=89e52957" />
+    
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/bizstyle.js"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="4.10. Improving the memory placement of two-dimensional arrays for sequential access" href="4p10.html" />
+    <link rel="prev" title="4.8. Moving invariant expressions to outside of the loop" href="4p8.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="4p10.html" title="4.10. Improving the memory placement of two-dimensional arrays for sequential access"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="4p8.html" title="4.8. Moving invariant expressions to outside of the loop"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U"><span class="section-number">4. </span>Tuning items</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.9. </span>Loop unrolling manually instead of OCLs</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="loop-unrolling-manually-instead-of-ocls">
+<span id="p9"></span><h1><span class="section-number">4.9. </span>Loop unrolling manually instead of OCLs<a class="headerlink" href="#loop-unrolling-manually-instead-of-ocls" title="Link to this heading">¶</a></h1>
+<section id="target-for-this-tuning">
+<span id="target-for-this-tuning-8"></span><h2><span class="section-number">4.9.1. </span>Target for this tuning<a class="headerlink" href="#target-for-this-tuning" title="Link to this heading">¶</a></h2>
+<p>The target for tuning in this section is the function “calc_function_4”,
+which is in the measurement region “Solving the system of equations”. In
+the initial version of the Application, the cost of this function was
+1.0% of that of the entire Application. This function was the fourth
+highest cost function in “Solving the system of equations” in the
+initial version</p>
+</section>
+<section id="analysis">
+<span id="analysis-8"></span><h2><span class="section-number">4.9.2. </span>Analysis<a class="headerlink" href="#analysis" title="Link to this heading">¶</a></h2>
+<p>The following nested loop was selected as a target after the analysis of
+the function “calc_function_4”. The key points of this source code are
+as follows:</p>
+<ul class="simple">
+<li><p>The “if” statement outside the loop (1), which was already inserted
+by another tuning item, indicated that the iteration count of loop
+(1) was 5 (constant with this model), and then the loop (1) was
+unrolled automatically by the compiler. On the other hand, the loop
+(2) was not unrolled by the compiler.</p></li>
+</ul>
+<p>[Some lines from function “calc_function_4” before this tuning was
+performed]</p>
+<p><a class="reference internal" href="../_images/image24.png"><img alt="image24" src="../_images/image24.png" style="width: 645.0px; height: 341.75px;" /></a></p>
+</section>
+<section id="tuning">
+<span id="tuning-8"></span><h2><span class="section-number">4.9.3. </span>Tuning<a class="headerlink" href="#tuning" title="Link to this heading">¶</a></h2>
+<p>Two types of tuning, Pattern A and Pattern B, were attempted as follows.</p>
+<p>&lt;Pattern A&gt;</p>
+<ul class="simple">
+<li><p>The OCL was specified to unroll the loop (2) for the purpose of
+improving instruction scheduling.</p></li>
+</ul>
+<p>[Some lines from function “calc_function_4” after this tuning Pattern A
+was performed]</p>
+<p><a class="reference internal" href="../_images/image25.png"><img alt="image25" src="../_images/image25.png" style="width: 521.25px; height: 309.75px;" /></a></p>
+<p>However, with the above optimization, the compiler could not unroll the
+loop (2). Therefore, Pattern B was performed as follows.</p>
+<p>&lt;Pattern B&gt;</p>
+<ul class="simple">
+<li><p>The loop (2) was unrolled manually instead of OCL.</p></li>
+</ul>
+<p>[Some lines from function “calc_function_4” after this tuning Pattern B
+was performed]</p>
+<p><a class="reference internal" href="../_images/image26.png"><img alt="image26" src="../_images/image26.png" style="width: 431.75px; height: 642.25px;" /></a></p>
+</section>
+<section id="evaluation-of-the-performance">
+<span id="evaluation-of-the-performance-9"></span><h2><span class="section-number">4.9.4. </span>Evaluation of the performance<a class="headerlink" href="#evaluation-of-the-performance" title="Link to this heading">¶</a></h2>
+<p>To evaluate the effect of this tuning, “cycle accounting” (output by
+fapp) in the measurement region “Solving the system of equations” before
+performing this tuning was compared with that after performing this
+tuning.</p>
+<p><a class="reference internal" href="../_images/image27.png"><img alt="image27" src="../_images/image27.png" style="width: 817.38px; height: 419.58px;" /></a></p>
+<p>As seen in the graphs above, the execution time measured before
+performing this tuning (depends on the longest process, Process 392) was
+24.38 seconds. On the other hand, the execution time measured after
+performing this tuning (similarly, Process 412) was 22.01 seconds. This
+means about 10% improvement.</p>
+<p>Especially, the execution time of Floating-point operation wait” was
+improved by this tuning. This indicates improved scheduling by loop
+unrolling.</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">4.9. Loop unrolling manually instead of OCLs</a><ul>
+<li><a class="reference internal" href="#target-for-this-tuning">4.9.1. Target for this tuning</a></li>
+<li><a class="reference internal" href="#analysis">4.9.2. Analysis</a></li>
+<li><a class="reference internal" href="#tuning">4.9.3. Tuning</a></li>
+<li><a class="reference internal" href="#evaluation-of-the-performance">4.9.4. Evaluation of the performance</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="4p8.html"
+                          title="previous chapter"><span class="section-number">4.8. </span>Moving invariant expressions to outside of the loop</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="4p10.html"
+                          title="next chapter"><span class="section-number">4.10. </span>Improving the memory placement of two-dimensional arrays for sequential access</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="4p10.html" title="4.10. Improving the memory placement of two-dimensional arrays for sequential access"
+             >next</a></li>
+        <li class="right" >
+          <a href="4p8.html" title="4.8. Moving invariant expressions to outside of the loop"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" ><span class="section-number">4. </span>Tuning items</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.9. </span>Loop unrolling manually instead of OCLs</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, RIKEN Center for Computational Science.
+    &nbsp;&nbsp;<a href="https://www.fugaku.r-ccs.riken.jp/">Fugaku Portal Top</a>
+    </div>
+  </body>
+</html>

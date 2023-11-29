@@ -1,0 +1,178 @@
+
+
+<!doctype html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>4.10. Improving the memory placement of two-dimensional arrays for sequential access &#8212;   documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="../_static/bizstyle.css?v=532c1bf3" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=89e52957" />
+    
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/bizstyle.js"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="5. Summary" href="../section5/index.html" />
+    <link rel="prev" title="4.9. Loop unrolling manually instead of OCLs" href="4p9.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../section5/index.html" title="5. Summary"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="4p9.html" title="4.9. Loop unrolling manually instead of OCLs"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U"><span class="section-number">4. </span>Tuning items</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.10. </span>Improving the memory placement of two-dimensional arrays for sequential access</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="improving-the-memory-placement-of-two-dimensional-arrays-for-sequential-access">
+<span id="p10"></span><h1><span class="section-number">4.10. </span>Improving the memory placement of two-dimensional arrays for sequential access<a class="headerlink" href="#improving-the-memory-placement-of-two-dimensional-arrays-for-sequential-access" title="Link to this heading">¶</a></h1>
+<section id="target-for-this-tuning">
+<span id="target-for-this-tuning-9"></span><h2><span class="section-number">4.10.1. </span>Target for this tuning<a class="headerlink" href="#target-for-this-tuning" title="Link to this heading">¶</a></h2>
+<p>The target for tuning in this section is the function which allocates or
+deallocates memory for two-dimensional arrays. While the cost of each
+function was low, these were called by many other functions. Therefore,
+tuning these functions was expected to improve the performance of the
+entire Application. This section describes the tuning for the memory
+allocation function as an example.</p>
+</section>
+<section id="analysis">
+<span id="analysis-9"></span><h2><span class="section-number">4.10.2. </span>Analysis<a class="headerlink" href="#analysis" title="Link to this heading">¶</a></h2>
+<p>The following is the source code of target function. The key points of
+this source code are as follows:</p>
+<ul class="simple">
+<li><p>The memory was allocated for the number of elements in the second
+dimension of the array at (1).</p></li>
+<li><p>Memory was allocated at random addresses on the memory map (see the
+following image).</p></li>
+</ul>
+<p>[Some lines from function, which allocate the two-dimensional arrays,
+before this tuning was performed]</p>
+<p><a class="reference internal" href="../_images/image28.png"><img alt="image28" src="../_images/image28.png" style="width: 757.75px; height: 283.5px;" /></a></p>
+</section>
+<section id="tuning">
+<span id="tuning-9"></span><h2><span class="section-number">4.10.3. </span>Tuning<a class="headerlink" href="#tuning" title="Link to this heading">¶</a></h2>
+<p>The following tuning was performed. In addition to this function, this
+tuning also applied to other memory-related functions, such as memory
+deallocate functions.</p>
+<ul class="simple">
+<li><p>When the two-dimensional array was allocated, each element of the
+array was assigned to sequential addresses on the memory map.</p></li>
+</ul>
+<p>[Some lines from function, which allocate the two-dimensional arrays,
+after this tuning was performed]</p>
+<p><a class="reference internal" href="../_images/image29.png"><img alt="image29" src="../_images/image29.png" style="width: 661.25px; height: 340.5px;" /></a></p>
+<p>Each element of the two-dimensional array was assigned to sequential
+addresses on the memory map by this tuning, therefore the
+two-dimensional arrays could be accessed sequentially then.</p>
+<p>In addition, this tuning made it possible to perform the tuning item
+#42. This tuning target of the tuning item #42 was some loops which
+manipulate 2-dimensional single-precision arrays in the function
+“calc_function_1” in the measurement region “Solving the system of
+equations”. The aim of the tuning item #42 was increasing the number of
+elements operated by a single SIMD instruction up to 16, while it was 8
+before applying this tuning..</p>
+</section>
+<section id="evaluation-of-the-performance">
+<span id="evaluation-of-the-performance-10"></span><h2><span class="section-number">4.10.4. </span>Evaluation of the performance<a class="headerlink" href="#evaluation-of-the-performance" title="Link to this heading">¶</a></h2>
+<p>To evaluate the effect of this tuning (corresponding to the tuning item
+#41) and the tuning item #42, the execution time of the Application
+before performing this tuning was compared with that after performing
+this tuning. This tuning may have affected the various parts of the
+Application, so the execution time of each measurement region was also
+measured. Note that the larger model, with 73 million elements than the
+one used so far, was employed for this evaluation to see the remarkable
+effect.</p>
+<p>The following table represents the result of the execution time of the
+entire Application and that of each measurement region. As seen in the
+results, the entire Application performance improvement was 1.6%. In
+particular, measurement region “Solving the system of equations” had
+been improved by 6.7%. This indicates the effect of this tuning and the
+tuning item #42.</p>
+<a class="reference internal image-reference" href="../_images/table9.png"><img alt="../_images/table9.png" class="align-center" src="../_images/table9.png" style="width: 642.4300000000001px; height: 378.25px;" /></a>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">4.10. Improving the memory placement of two-dimensional arrays for sequential access</a><ul>
+<li><a class="reference internal" href="#target-for-this-tuning">4.10.1. Target for this tuning</a></li>
+<li><a class="reference internal" href="#analysis">4.10.2. Analysis</a></li>
+<li><a class="reference internal" href="#tuning">4.10.3. Tuning</a></li>
+<li><a class="reference internal" href="#evaluation-of-the-performance">4.10.4. Evaluation of the performance</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="4p9.html"
+                          title="previous chapter"><span class="section-number">4.9. </span>Loop unrolling manually instead of OCLs</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="../section5/index.html"
+                          title="next chapter"><span class="section-number">5. </span>Summary</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../section5/index.html" title="5. Summary"
+             >next</a></li>
+        <li class="right" >
+          <a href="4p9.html" title="4.9. Loop unrolling manually instead of OCLs"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" ><span class="section-number">4. </span>Tuning items</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.10. </span>Improving the memory placement of two-dimensional arrays for sequential access</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, RIKEN Center for Computational Science.
+    &nbsp;&nbsp;<a href="https://www.fugaku.r-ccs.riken.jp/">Fugaku Portal Top</a>
+    </div>
+  </body>
+</html>

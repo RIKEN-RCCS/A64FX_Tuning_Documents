@@ -1,0 +1,187 @@
+
+
+<!doctype html>
+
+<html lang="ja" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>ISVアプリ性能チューニング事例報告書 &#8212;   ドキュメント</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="_static/bizstyle.css?v=532c1bf3" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=89e52957" />
+    
+    <script src="_static/documentation_options.js?v=c033477b"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/translations.js?v=4dbe4bdc"></script>
+    <script src="_static/bizstyle.js"></script>
+    <link rel="search" title="検索" href="search.html" />
+    <link rel="next" title="1. はじめに" href="section1/index.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="section1/index.html" title="1. はじめに"
+             accesskey="N">次へ</a></li>
+        <li class="nav-item nav-item-0"><a href="#">  ドキュメント</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">ISVアプリ性能チューニング事例報告書</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="isv">
+<h1>ISVアプリ性能チューニング事例報告書<a class="headerlink" href="#isv" title="Link to this heading">¶</a></h1>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">目次</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="section1/index.html">1. はじめに</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="section1/index.html#id2">1.1. 本文書の目的</a></li>
+<li class="toctree-l2"><a class="reference internal" href="section1/index.html#tuningapp">1.2. チューニング対象のアプリケーション</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="section2/index.html">2. 目標性能とチューニング手順</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="section2/index.html#id2">2.1. 目標性能と前提条件</a></li>
+<li class="toctree-l2"><a class="reference internal" href="section2/index.html#tuningmethods">2.2. チューニング手順</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="section3/index.html">3. チューニングの作業内容と結果</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="section3/index.html#elapsedtime">3.1. 実行時間の計測</a></li>
+<li class="toctree-l2"><a class="reference internal" href="section3/index.html#fippcost">3.2. 関数単位のコストの計測</a></li>
+<li class="toctree-l2"><a class="reference internal" href="section3/index.html#id4">3.3. チューニングの実施</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="section3/index.html#tuninglist">3.3.1. チューニング項目の一覧</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section3/index.html#tuningresult">3.3.2. アプリケーションの改善結果</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="section4/index.html">4. チューニング項目</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="section4/4p1.html">4.1. 除算処理のSIMD化と小回転ループのSIMD化抑止</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p1.html#id1">4.1.1. チューニング対象</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p1.html#id2">4.1.2. 分析</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p1.html#id3">4.1.3. 実施</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p1.html#id4">4.1.4. 効果の検証</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="section4/4p2.html">4.2. ループ展開によるload/store削減</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p2.html#id1">4.2.1. チューニング対象</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p2.html#id3">4.2.2. 分析</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p2.html#id5">4.2.3. 実施</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p2.html#id7">4.2.4. 効果の検証</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="section4/4p3.html">4.3. ループ一重化によるSIMD化促進</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p3.html#id1">4.3.1. チューニング対象</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p3.html#id3">4.3.2. 分析</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p3.html#id5">4.3.3. 実施</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p3.html#id7">4.3.4. 効果の検証</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="section4/4p4.html">4.4. ループ回転方向変更</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p4.html#id2">4.4.1. チューニング対象</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p4.html#id4">4.4.2. 分析</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p4.html#id6">4.4.3. 実施</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p4.html#id8">4.4.4. 効果の検証</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="section4/4p5.html">4.5. SVE ACLEによるSIMD化</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p5.html#id1">4.5.1. チューニング対象</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p5.html#id3">4.5.2. 分析</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p5.html#id5">4.5.3. 実施</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p5.html#id7">4.5.4. 効果の検証</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="section4/4p6.html">4.6. ビルトインプリフェッチ</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p6.html#id2">4.6.1. チューニング対象</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p6.html#id4">4.6.2. 分析</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p6.html#id6">4.6.3. 実施</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p6.html#id8">4.6.4. 効果の検証</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="section4/4p7.html">4.7. 除算処理をループの外側に移動しSIMD化</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p7.html#id1">4.7.1. チューニング対象</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p7.html#id3">4.7.2. 分析</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p7.html#id5">4.7.3. 実施</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p7.html#id7">4.7.4. 効果の検証</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="section4/4p8.html">4.8. ループ外への不変式の移動</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p8.html#id2">4.8.1. チューニング対象</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p8.html#id4">4.8.2. 分析</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p8.html#id6">4.8.3. 実施</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p8.html#id8">4.8.4. 効果の検証</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="section4/4p9.html">4.9. 最適化制御行を使わないループ展開</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p9.html#id2">4.9.1. チューニング対象</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p9.html#id4">4.9.2. 分析</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p9.html#id6">4.9.3. 実施</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p9.html#id8">4.9.4. 効果の検証</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="section4/4p10.html">4.10. 2次元配列のメモリ配置改善</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p10.html#id2">4.10.1. チューニング対象</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p10.html#id4">4.10.2. 分析</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p10.html#id6">4.10.3. 実施</a></li>
+<li class="toctree-l3"><a class="reference internal" href="section4/4p10.html#id8">4.10.4. 効果の検証</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="section5/index.html">5. まとめ</a></li>
+</ul>
+</div>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h4>次のトピックへ</h4>
+    <p class="topless"><a href="section1/index.html"
+                          title="次の章へ"><span class="section-number">1. </span>はじめに</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">クイック検索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="検索" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="section1/index.html" title="1. はじめに"
+             >次へ</a></li>
+        <li class="nav-item nav-item-0"><a href="#">  ドキュメント</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">ISVアプリ性能チューニング事例報告書</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, 理化学研究所計算科学研究センター.
+    &nbsp;&nbsp;<a href="https://www.fugaku.r-ccs.riken.jp/">Fugaku Portal Top</a>
+    </div>
+  </body>
+</html>

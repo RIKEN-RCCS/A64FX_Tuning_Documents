@@ -1,0 +1,193 @@
+
+
+<!doctype html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>4.1. SIMDization of division operations and suppression of SIMDization for loops with small iteration counts &#8212;   documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="../_static/bizstyle.css?v=532c1bf3" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=89e52957" />
+    
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/bizstyle.js"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="4.2. Reducing load and store operations of data by loop unrolling" href="4p2.html" />
+    <link rel="prev" title="4. Tuning items" href="index.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="4p2.html" title="4.2. Reducing load and store operations of data by loop unrolling"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="index.html" title="4. Tuning items"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U"><span class="section-number">4. </span>Tuning items</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.1. </span>SIMDization of division operations and suppression of SIMDization for loops with small iteration counts</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="simdization-of-division-operations-and-suppression-of-simdization-for-loops-with-small-iteration-counts">
+<span id="p1"></span><h1><span class="section-number">4.1. </span>SIMDization of division operations and suppression of SIMDization for loops with small iteration counts<a class="headerlink" href="#simdization-of-division-operations-and-suppression-of-simdization-for-loops-with-small-iteration-counts" title="Link to this heading">¶</a></h1>
+<section id="target-for-this-tuning">
+<h2><span class="section-number">4.1.1. </span>Target for this tuning<a class="headerlink" href="#target-for-this-tuning" title="Link to this heading">¶</a></h2>
+<p>The target for tuning in this section is the function “calc_function_3”,
+which is in the measurement region “Solving the system of equations”. In
+the initial version of the Application, the cost of this function was
+1.6% of that of the entire Application.</p>
+</section>
+<section id="analysis">
+<h2><span class="section-number">4.1.2. </span>Analysis<a class="headerlink" href="#analysis" title="Link to this heading">¶</a></h2>
+<p>The following nested loop was selected as a target after the analysis of
+the function “calc_function_3”. The key points of this source code are
+as follows:</p>
+<ul class="simple">
+<li><p>Only the inner loop (1) was SIMDized by the compiler. However, the
+SIMDization was not performed effectively because the iteration count
+of this loop was too small (5 at most).</p></li>
+<li><p>Loop (1) included the operations of summing the calculation results
+due to the SIMDization.</p></li>
+<li><p>The division operation in (2) in the outer loop was not SIMDized.</p></li>
+</ul>
+<p>[Some lines from function “calc_function_3” before this tuning was
+performed]</p>
+<p><a class="reference internal" href="../_images/image2.png"><img alt="image2" src="../_images/image2.png" style="width: 595.0px; height: 210.75px;" /></a></p>
+</section>
+<section id="tuning">
+<h2><span class="section-number">4.1.3. </span>Tuning<a class="headerlink" href="#tuning" title="Link to this heading">¶</a></h2>
+<p>The following tuning was performed.</p>
+<ul class="simple">
+<li><p>In order to change the division operations to multiplication
+operations in this target loop, the division operations were moved to the
+outside of the outer loop to calculate 1/a[][] before the outer loop.
+Additionally, OCL was specified to suppress loop unrolling of this
+new loop, so that this loop could be SIMDized. To store 1/a[][] in
+this loop, an extra array a_inv[][] was added whose size must be 5 x
+6.</p></li>
+<li><p>Another OCL was specified to suppress the SIMDization of the inner
+loop.</p></li>
+</ul>
+<p>[Some lines from function “calc_function_3” after this tuning was
+performed]</p>
+<p><a class="reference internal" href="../_images/image3.png"><img alt="image3" src="../_images/image3.png" style="width: 714.0px; height: 376.25px;" /></a></p>
+</section>
+<section id="evaluation-of-the-performance">
+<span id="evaluation-of-the-performance-1"></span><h2><span class="section-number">4.1.4. </span>Evaluation of the performance<a class="headerlink" href="#evaluation-of-the-performance" title="Link to this heading">¶</a></h2>
+<p>To evaluate the effect of this tuning, cost information (output by fipp)
+of the entire Application and target function before performing this
+tuning was compared with that after performing this tuning.</p>
+<p>The following table represents the cost measurement results by fipp.
+This tuning reduced the cost of the function “calc_function_3” by 30%
+and the entire Application cost by 1.4%.</p>
+<p>[Cost measurement results by fipp]</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head" rowspan="2"></th>
+<th class="head" colspan="2"><p>Cost</p></th>
+<th class="head" rowspan="2"><p>Performance
+improvement
+rate((A-B)/A)</p></th>
+</tr>
+<tr class="row-even"><th class="head"><p>Before performing this tuning
+of this section (A)</p></th>
+<th class="head"><p>After performing this tuning
+of this section (B)</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-odd"><td><p>the entire Application</p></td>
+<td><p>5975125</p></td>
+<td><p>5889171</p></td>
+<td><p>1.4%</p></td>
+</tr>
+<tr class="row-even"><td><p>calc_function_3</p></td>
+<td><p>164184</p></td>
+<td><p>114805</p></td>
+<td><p>30.1%</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">4.1. SIMDization of division operations and suppression of SIMDization for loops with small iteration counts</a><ul>
+<li><a class="reference internal" href="#target-for-this-tuning">4.1.1. Target for this tuning</a></li>
+<li><a class="reference internal" href="#analysis">4.1.2. Analysis</a></li>
+<li><a class="reference internal" href="#tuning">4.1.3. Tuning</a></li>
+<li><a class="reference internal" href="#evaluation-of-the-performance">4.1.4. Evaluation of the performance</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="index.html"
+                          title="previous chapter"><span class="section-number">4. </span>Tuning items</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="4p2.html"
+                          title="next chapter"><span class="section-number">4.2. </span>Reducing load and store operations of data by loop unrolling</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="4p2.html" title="4.2. Reducing load and store operations of data by loop unrolling"
+             >next</a></li>
+        <li class="right" >
+          <a href="index.html" title="4. Tuning items"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" ><span class="section-number">4. </span>Tuning items</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.1. </span>SIMDization of division operations and suppression of SIMDization for loops with small iteration counts</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, RIKEN Center for Computational Science.
+    &nbsp;&nbsp;<a href="https://www.fugaku.r-ccs.riken.jp/">Fugaku Portal Top</a>
+    </div>
+  </body>
+</html>

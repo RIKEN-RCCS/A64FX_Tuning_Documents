@@ -1,0 +1,163 @@
+
+
+<!doctype html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>4.8. Moving invariant expressions to outside of the loop &#8212;   documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="../_static/bizstyle.css?v=532c1bf3" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=89e52957" />
+    
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/bizstyle.js"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="4.9. Loop unrolling manually instead of OCLs" href="4p9.html" />
+    <link rel="prev" title="4.7. Moving division operations to outside of the loop, and applying SIMDization to the division operations" href="4p7.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="4p9.html" title="4.9. Loop unrolling manually instead of OCLs"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="4p7.html" title="4.7. Moving division operations to outside of the loop, and applying SIMDization to the division operations"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U"><span class="section-number">4. </span>Tuning items</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.8. </span>Moving invariant expressions to outside of the loop</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="moving-invariant-expressions-to-outside-of-the-loop">
+<span id="p8"></span><h1><span class="section-number">4.8. </span>Moving invariant expressions to outside of the loop<a class="headerlink" href="#moving-invariant-expressions-to-outside-of-the-loop" title="Link to this heading">¶</a></h1>
+<section id="target-for-this-tuning">
+<span id="target-for-this-tuning-7"></span><h2><span class="section-number">4.8.1. </span>Target for this tuning<a class="headerlink" href="#target-for-this-tuning" title="Link to this heading">¶</a></h2>
+<p>The target for tuning in this section is the function “calc_function_2”,
+which is in the measurement region “Solving the system of equations”. In
+the initial version of the Application, the cost of this function was
+1.9% of that of the entire Application. This function was the second
+highest cost functions in “Solving the system of equations” in the
+initial version.</p>
+</section>
+<section id="analysis">
+<span id="analysis-7"></span><h2><span class="section-number">4.8.2. </span>Analysis<a class="headerlink" href="#analysis" title="Link to this heading">¶</a></h2>
+<p>The following nested loop was selected as a target after the analysis of
+the function “calc_function_2”. The key points of this source code are
+as follows:</p>
+<ul class="simple">
+<li><p>The loop (1) was unrolled successfully by the compiler.</p></li>
+<li><p>The quotients of the division operations (2) did not depend on the
+counter variable of the loop (1). Therefore, it was possible to move
+the division operations (2) to the outside of the loop (1).</p></li>
+</ul>
+<p>[Some lines from function “calc_function_2” before this tuning was
+performed]</p>
+<p><a class="reference internal" href="../_images/image21.png"><img alt="image21" src="../_images/image21.png" style="width: 811.5px; height: 213.5px;" /></a></p>
+</section>
+<section id="tuning">
+<span id="tuning-7"></span><h2><span class="section-number">4.8.3. </span>Tuning<a class="headerlink" href="#tuning" title="Link to this heading">¶</a></h2>
+<p>The following tuning was performed.</p>
+<ul class="simple">
+<li><p>In order to reduce the operational amount in the loop (1), the
+division operations, which did not depend on the loop counter “I”,
+were moved to the outside of the loop (1).</p></li>
+</ul>
+<p>[Some lines from function “calc_function_2” after this tuning was
+performed]</p>
+<p><a class="reference internal" href="../_images/image22.png"><img alt="image22" src="../_images/image22.png" style="width: 526.25px; height: 210.75px;" /></a></p>
+</section>
+<section id="evaluation-of-the-performance">
+<span id="evaluation-of-the-performance-8"></span><h2><span class="section-number">4.8.4. </span>Evaluation of the performance<a class="headerlink" href="#evaluation-of-the-performance" title="Link to this heading">¶</a></h2>
+<p>To evaluate the effect of this tuning, “cycle accounting” (output by
+fapp) in the measurement region “Solving the system of equations” before
+performing this tuning was compared with that after performing this
+tuning.</p>
+<p><a class="reference internal" href="../_images/image23.png"><img alt="image23" src="../_images/image23.png" style="width: 811.8px; height: 412.38px;" /></a></p>
+<p>As seen in the graphs above, the execution time measured before
+performing this tuning (depends on the longest process, Process 388) was
+24.48 seconds. On the other hand, the execution time measured after
+performing this tuning (similarly, Process 392) was 24.38 seconds. This
+means about 0.4% improvement. This indicates the effect of this tuning.</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">4.8. Moving invariant expressions to outside of the loop</a><ul>
+<li><a class="reference internal" href="#target-for-this-tuning">4.8.1. Target for this tuning</a></li>
+<li><a class="reference internal" href="#analysis">4.8.2. Analysis</a></li>
+<li><a class="reference internal" href="#tuning">4.8.3. Tuning</a></li>
+<li><a class="reference internal" href="#evaluation-of-the-performance">4.8.4. Evaluation of the performance</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="4p7.html"
+                          title="previous chapter"><span class="section-number">4.7. </span>Moving division operations to outside of the loop, and applying SIMDization to the division operations</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="4p9.html"
+                          title="next chapter"><span class="section-number">4.9. </span>Loop unrolling manually instead of OCLs</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="4p9.html" title="4.9. Loop unrolling manually instead of OCLs"
+             >next</a></li>
+        <li class="right" >
+          <a href="4p7.html" title="4.7. Moving division operations to outside of the loop, and applying SIMDization to the division operations"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" ><span class="section-number">4. </span>Tuning items</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.8. </span>Moving invariant expressions to outside of the loop</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, RIKEN Center for Computational Science.
+    &nbsp;&nbsp;<a href="https://www.fugaku.r-ccs.riken.jp/">Fugaku Portal Top</a>
+    </div>
+  </body>
+</html>
