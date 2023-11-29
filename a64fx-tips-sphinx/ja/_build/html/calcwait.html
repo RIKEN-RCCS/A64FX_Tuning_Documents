@@ -1,0 +1,124 @@
+
+
+<!doctype html>
+
+<html lang="ja" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>3. 演算待ち時間の削減 &#8212; A64FX向けチューニングドキュメント整備</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="_static/bizstyle.css?v=532c1bf3" />
+    
+    <script src="_static/documentation_options.js?v=c033477b"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/translations.js?v=4dbe4bdc"></script>
+    <script src="_static/bizstyle.js"></script>
+    <link rel="search" title="検索" href="search.html" />
+    <link rel="next" title="3.1. 巨大ループのループ分割" href="calcwait-fission.html" />
+    <link rel="prev" title="2.3. 不完全入れ子ループのループ分割" href="simd-fission.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="calcwait-fission.html" title="3.1. 巨大ループのループ分割"
+             accesskey="N">次へ</a></li>
+        <li class="right" >
+          <a href="simd-fission.html" title="2.3. 不完全入れ子ループのループ分割"
+             accesskey="P">前へ</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">A64FX向けチューニングドキュメント整備</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">3. </span>演算待ち時間の削減</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1><span class="section-number">3. </span>演算待ち時間の削減<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>CPU性能解析レポートを作成し、サイクルアカウンティング測定結果を参照した結果、浮動小数点演算待ち時間や整数演算待ち時間の占める割合が大きい場合、コンパイラによる最適化内容を見直す余地が考えられます。
+そのような場合の施策の例を以下で説明します。</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="calcwait-fission.html">3.1. 巨大ループのループ分割</a></li>
+<li class="toctree-l1"><a class="reference internal" href="calcwait-striping.html">3.2. 少回転最内ループのループストライピング</a></li>
+</ul>
+</div>
+<p>なおサイクルアカウンティング測定結果の演算待ち時間やキャッシュアクセス待ち時間は、A64FXプロセッサが実行中で未完了状態の命令のうち、各CPUサイクルにおいてプログラム順で最も古い命令の状態にもとづいて算出されます。</p>
+<p>そのため、例えば配列アクセスの結果に依存し連鎖する演算が多く含まれる場合などでは、
+<a class="reference internal" href="cachewait.html"><span class="doc">キャッシュアクセス待ち時間の削減</span></a>
+向けの施策が、結果的に演算待ち時間の削減につながるケースもあります。</p>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">目次</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">1. はじめに</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simd.html">2. SIMD化の促進</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">3. 演算待ち時間の削減</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="calcwait-fission.html">3.1. 巨大ループのループ分割</a></li>
+<li class="toctree-l2"><a class="reference internal" href="calcwait-striping.html">3.2. 少回転最内ループのループストライピング</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="cachewait.html">4. キャッシュアクセス待ち時間の削減</a></li>
+<li class="toctree-l1"><a class="reference internal" href="summary.html">5. まとめ</a></li>
+</ul>
+
+  <div>
+    <h4>前のトピックへ</h4>
+    <p class="topless"><a href="simd-fission.html"
+                          title="前の章へ"><span class="section-number">2.3. </span>不完全入れ子ループのループ分割</a></p>
+  </div>
+  <div>
+    <h4>次のトピックへ</h4>
+    <p class="topless"><a href="calcwait-fission.html"
+                          title="次の章へ"><span class="section-number">3.1. </span>巨大ループのループ分割</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">クイック検索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="検索" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="calcwait-fission.html" title="3.1. 巨大ループのループ分割"
+             >次へ</a></li>
+        <li class="right" >
+          <a href="simd-fission.html" title="2.3. 不完全入れ子ループのループ分割"
+             >前へ</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">A64FX向けチューニングドキュメント整備</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">3. </span>演算待ち時間の削減</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; 著作権 2023, 理化学研究所 計算科学研究センター.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,196 @@
+
+
+<!doctype html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>4.3. Specifying CONTIGUOUS Attribute to Array Pointer &#8212; Documentation of Tuning Techniques for A64FX Processors</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="_static/bizstyle.css?v=532c1bf3" />
+    
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/bizstyle.js"></script>
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="5. Summary" href="summary.html" />
+    <link rel="prev" title="4.2. Interchange of Array Dimension for AoS Layout" href="cachewait-soa.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="summary.html" title="5. Summary"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="cachewait-soa.html" title="4.2. Interchange of Array Dimension for AoS Layout"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Documentation of Tuning Techniques for A64FX Processors</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="cachewait.html" accesskey="U"><span class="section-number">4. </span>Reduction of Waiting Time for Cache Access</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.3. </span>Specifying CONTIGUOUS Attribute to Array Pointer</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="specifying-contiguous-attribute-to-array-pointer">
+<h1><span class="section-number">4.3. </span>Specifying CONTIGUOUS Attribute to Array Pointer<a class="headerlink" href="#specifying-contiguous-attribute-to-array-pointer" title="Link to this heading">¶</a></h1>
+<section id="motivation">
+<h2><span class="section-number">4.3.1. </span>Motivation<a class="headerlink" href="#motivation" title="Link to this heading">¶</a></h2>
+<p>In Fortran programs, array pointers specified as CONTIGUOUS can be associated only with contiguous targets.
+Therefore, when CONTIGUOUS attribute is specified to an array pointer, Fujitsu Fortran compiler optimizes object codes for array accesses under the assumption that the data pointed by the pointer is located contiguously in the memory.</p>
+<p>It means that, when user can specify CONTIGUOUS attribute for an array pointer, array accesses are done with contiguous load/store instructions,
+<strong>busy time for cache access is reduced</strong>
+and it might lead to reduction of execution time.</p>
+</section>
+<section id="applied-example">
+<h2><span class="section-number">4.3.2. </span>Applied Example<a class="headerlink" href="#applied-example" title="Link to this heading">¶</a></h2>
+<p>Using an example based on
+<a class="reference external" href="https://www.cs.virginia.edu/stream/FTP/Code/stream.f">STREAM benchmark</a>,
+performance improvement by applying this technique is shown below.
+In this example, CONTIGUOUS attribute is specified for array pointers pa, pb and pc, which are associated with allocatable arrays.</p>
+<div class="literal-block-wrapper docutils container" id="id1">
+<div class="code-block-caption"><span class="caption-text">Original</span><a class="headerlink" href="#id1" title="Link to this code">¶</a></div>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="k">TYPE </span><span class="n">dtype</span>
+<span class="w">  </span><span class="kt">REAL</span><span class="p">(</span><span class="nb">KIND</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">DIMENSION</span><span class="p">(:),</span><span class="w"> </span><span class="k">ALLOCATABLE</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="n">c</span>
+<span class="k">END TYPE </span><span class="n">dtype</span>
+</pre></div>
+</div>
+</div>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="k">TYPE</span><span class="p">(</span><span class="n">dtype</span><span class="p">),</span><span class="w"> </span><span class="k">TARGET</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">dtarg</span>
+<span class="w">    </span><span class="kt">REAL</span><span class="p">(</span><span class="nb">KIND</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">DIMENSION</span><span class="p">(:),</span><span class="w"> </span><span class="k">POINTER</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">pa</span><span class="p">,</span><span class="w"> </span><span class="n">pb</span><span class="p">,</span><span class="w"> </span><span class="n">pc</span>
+
+<span class="w">    </span><span class="n">pa</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">dtarg</span><span class="p">%</span><span class="n">a</span>
+<span class="w">    </span><span class="n">pb</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">dtarg</span><span class="p">%</span><span class="n">b</span>
+<span class="w">    </span><span class="n">pc</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">dtarg</span><span class="p">%</span><span class="n">c</span>
+<span class="c">!$OMP PARALLEL DO</span>
+<span class="c">!OCL NORECURRENCE</span>
+<span class="w">    </span><span class="k">DO </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">n</span>
+<span class="w">       </span><span class="n">pa</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pb</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">scalar</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">pc</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+<span class="w">    </span><span class="k">END DO</span>
+</pre></div>
+</div>
+<div class="literal-block-wrapper docutils container" id="id2">
+<div class="code-block-caption"><span class="caption-text">Technique applied</span><a class="headerlink" href="#id2" title="Link to this code">¶</a></div>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="k">TYPE</span><span class="p">(</span><span class="n">dtype</span><span class="p">),</span><span class="w"> </span><span class="k">TARGET</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">dtarg</span>
+<span class="hll"><span class="w">    </span><span class="kt">REAL</span><span class="p">(</span><span class="nb">KIND</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">DIMENSION</span><span class="p">(:),</span><span class="w"> </span><span class="k">POINTER</span><span class="p">,</span><span class="w"> </span><span class="k">CONTIGUOUS</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">pa</span><span class="p">,</span><span class="w"> </span><span class="n">pb</span><span class="p">,</span><span class="w"> </span><span class="n">pc</span>
+</span>
+<span class="w">    </span><span class="n">pa</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">dtarg</span><span class="p">%</span><span class="n">a</span>
+<span class="w">    </span><span class="n">pb</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">dtarg</span><span class="p">%</span><span class="n">b</span>
+<span class="w">    </span><span class="n">pc</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">dtarg</span><span class="p">%</span><span class="n">c</span>
+<span class="c">!$OMP PARALLEL DO</span>
+<span class="c">!OCL NORECURRENCE</span>
+<span class="w">    </span><span class="k">DO </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">n</span>
+<span class="w">       </span><span class="n">pa</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pb</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">scalar</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">pc</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+<span class="w">    </span><span class="k">END DO</span>
+</pre></div>
+</div>
+</div>
+<p>Results of cycle accounting for executions before/after applying the technique are shown in graphs below.
+Assuming blocking for L2 cache, a parameter for the loop execution was chosen as follows:</p>
+<blockquote>
+<div><p>n = 196608</p>
+</div></blockquote>
+<p>Comparing the right graph for the technique applied to the left graph for the original, busy time for L1D cache access was reduced by half, waiting time for L2 cache access became dominant and execution time was reduced by 44%.</p>
+<a class="reference internal image-reference" href="_images/triadt.29503716.0.png"><img alt="_images/triadt.29503716.0.png" src="_images/triadt.29503716.0.png" style="width: 49%;" /></a>
+<a class="reference internal image-reference" href="_images/triadt.29503716.1.png"><img alt="_images/triadt.29503716.1.png" src="_images/triadt.29503716.1.png" style="width: 49%;" /></a>
+</section>
+<section id="real-cases">
+<h2><span class="section-number">4.3.3. </span>Real Cases<a class="headerlink" href="#real-cases" title="Link to this heading">¶</a></h2>
+<p>A real case related to this technique is presented in
+<a class="reference external" href="https://www.hpci-office.jp/en/events/symposia/meetings_A64FX">“Meetings for application code tuning on A64FX computer systems”</a>
+as follows:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.hpci-office.jp/documents/meeting_A64FX/201223/20201223_Kobayashi_Tuning.pdf#page=14">Optimization of GENESIS on Fugaku</a></p></li>
+</ul>
+</section>
+<section id="references">
+<h2><span class="section-number">4.3.4. </span>References<a class="headerlink" href="#references" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/en/manuals/tcsds-1.2.37/lang/Fortran/j2ul-2557-01enz0.pdf#page=167">Fortran Language Reference “2.88 CONTIGUOUS Statement”</a></p></li>
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/en/programming_guides/Fortran_Programming_Guide.pdf#page=147">Programming Guide (Fortran) “contiguous Attribute”</a></p></li>
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/en/programming_guides/Fortran_Programming_Guide.pdf#page=162">Programming Guide (Fortran) “Performance Tuning by pointer”</a></p></li>
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/en/programming_guides/Tuning_Programming_Guide.pdf#page=176">Programming Guide (Tuning) “Loops Containing Pointer Variables (contiguous Attribute Specified)”</a></p></li>
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/en/programming_guides/app-tuning-pattern-English.pdf#page=65">CPU performance tuning based on the type of application “5.4.7 supplement compiler optimization - adding contiguous attribute to array of pointers”</a></p></li>
+</ul>
+<p>Notice: Access rights for
+<a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/en/">Fugaku User Portal</a>
+are required to read the above documents.</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">Table of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">1. Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simd.html">2. Promoting Vectorization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="calcwait.html">3. Reduction of Waiting Time for Calculation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="cachewait.html">4. Reduction of Waiting Time for Cache Access</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="cachewait-unroll.html">4.1. Full-Unrolling of Innermost Loop with Non-Contiguous Data Access</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cachewait-soa.html">4.2. Interchange of Array Dimension for AoS Layout</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">4.3. Specifying CONTIGUOUS Attribute to Array Pointer</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="summary.html">5. Summary</a></li>
+</ul>
+
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="cachewait-soa.html"
+                          title="previous chapter"><span class="section-number">4.2. </span>Interchange of Array Dimension for AoS Layout</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="summary.html"
+                          title="next chapter"><span class="section-number">5. </span>Summary</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="summary.html" title="5. Summary"
+             >next</a></li>
+        <li class="right" >
+          <a href="cachewait-soa.html" title="4.2. Interchange of Array Dimension for AoS Layout"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Documentation of Tuning Techniques for A64FX Processors</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="cachewait.html" ><span class="section-number">4. </span>Reduction of Waiting Time for Cache Access</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.3. </span>Specifying CONTIGUOUS Attribute to Array Pointer</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2023, RIKEN Center for Computational Science.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

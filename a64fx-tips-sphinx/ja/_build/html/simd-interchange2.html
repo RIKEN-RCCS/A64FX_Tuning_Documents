@@ -1,0 +1,187 @@
+
+
+<!doctype html>
+
+<html lang="ja" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>2.2. 少回転最内ループのループ交換 &#8212; A64FX向けチューニングドキュメント整備</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="_static/bizstyle.css?v=532c1bf3" />
+    
+    <script src="_static/documentation_options.js?v=c033477b"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/translations.js?v=4dbe4bdc"></script>
+    <script src="_static/bizstyle.js"></script>
+    <link rel="search" title="検索" href="search.html" />
+    <link rel="next" title="2.3. 不完全入れ子ループのループ分割" href="simd-fission.html" />
+    <link rel="prev" title="2.1. データ依存最内ループのループ交換" href="simd-interchange1.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="simd-fission.html" title="2.3. 不完全入れ子ループのループ分割"
+             accesskey="N">次へ</a></li>
+        <li class="right" >
+          <a href="simd-interchange1.html" title="2.1. データ依存最内ループのループ交換"
+             accesskey="P">前へ</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">A64FX向けチューニングドキュメント整備</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="simd.html" accesskey="U"><span class="section-number">2. </span>SIMD化の促進</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">2.2. </span>少回転最内ループのループ交換</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1><span class="section-number">2.2. </span>少回転最内ループのループ交換<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<section id="id2">
+<h2><span class="section-number">2.2.1. </span>動機<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>富士通Fortran/C/C++コンパイラはA64FXプロセッサのプレディケートレジスタを用いることにより、任意の繰り返し数のループをSIMD化します。
+ただし、ループ繰り返し数が少なく、かつSIMD幅の倍数ではない場合、プレディケートレジスタによって無効化される演算の量は無視できない割合になります。</p>
+<p>ここで、最内ループの繰り返し数が少ないものの、外側ループの繰り返し数が相対的に多い場合、これらのループをループ交換することによって、
+<strong>プレディケートレジスタによって無効化される演算の割合を抑制</strong>
+できるケースがあります。</p>
+<p>その結果、無駄な演算が削減されて、実行時間を短縮できる可能性があります。</p>
+</section>
+<section id="id3">
+<h2><span class="section-number">2.2.2. </span>適用例<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p><a class="reference external" href="https://www.hpci-office.jp/en/events/symposia/meetings_A64FX">A64FX向けチューニング技術検討会</a>
+で示されたコード例を用いて、性能改善の例を以下に示します。
+この例では、ループ繰り返し数が少ないdo変数ichのループを、do変数kのループとループ交換しています。</p>
+<div class="literal-block-wrapper docutils container" id="id5">
+<div class="code-block-caption"><span class="caption-text">改善前</span><a class="headerlink" href="#id5" title="Link to this code">¶</a></div>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="w">  </span><span class="k">do </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">rd_kmax</span>
+<span class="w">     </span><span class="n">ip</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">indexP</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+<span class="w">     </span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gas</span><span class="p">(</span><span class="n">k</span><span class="p">,</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">,</span><span class="n">igasabs</span><span class="p">(</span><span class="n">igas</span><span class="p">,</span><span class="n">iw</span><span class="p">))</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">PPM</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">dz_std</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+<span class="w">     </span><span class="k">do </span><span class="n">ich</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">chmax</span>
+<span class="w">        </span><span class="n">A1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">AKD</span><span class="p">(</span><span class="n">ich</span><span class="p">,</span><span class="n">ip</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">gasno</span><span class="p">,</span><span class="n">iw</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="w"> </span><span class="mf">1.0_RP</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">factP</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="w"> </span><span class="p">)&amp;</span>
+<span class="w">             </span><span class="o">+</span><span class="w"> </span><span class="n">AKD</span><span class="p">(</span><span class="n">ich</span><span class="p">,</span><span class="n">ip</span><span class="w"> </span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">gasno</span><span class="p">,</span><span class="n">iw</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="w"> </span><span class="n">factP</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="w"> </span><span class="p">)</span>
+<span class="w">        </span><span class="n">A2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">AKD</span><span class="p">(</span><span class="n">ich</span><span class="p">,</span><span class="n">ip</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">gasno</span><span class="p">,</span><span class="n">iw</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="w"> </span><span class="mf">1.0_RP</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">factP</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="w"> </span><span class="p">)&amp;</span>
+<span class="w">             </span><span class="o">+</span><span class="w"> </span><span class="n">AKD</span><span class="p">(</span><span class="n">ich</span><span class="p">,</span><span class="n">ip</span><span class="w"> </span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">gasno</span><span class="p">,</span><span class="n">iw</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="w"> </span><span class="n">factP</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="w"> </span><span class="p">)</span>
+<span class="w">        </span><span class="n">A3</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">AKD</span><span class="p">(</span><span class="n">ich</span><span class="p">,</span><span class="n">ip</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="n">gasno</span><span class="p">,</span><span class="n">iw</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="w"> </span><span class="mf">1.0_RP</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">factP</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="w"> </span><span class="p">)&amp;</span>
+<span class="w">             </span><span class="o">+</span><span class="w"> </span><span class="n">AKD</span><span class="p">(</span><span class="n">ich</span><span class="p">,</span><span class="n">ip</span><span class="w"> </span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="n">gasno</span><span class="p">,</span><span class="n">iw</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="w"> </span><span class="n">factP</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="w"> </span><span class="p">)</span>
+<span class="w">        </span><span class="n">factPT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">factT32</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">A3</span><span class="o">-</span><span class="n">A2</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">A2</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">factT21</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">A2</span><span class="o">-</span><span class="n">A1</span><span class="p">)</span>
+<span class="w">        </span><span class="n">tauGAS</span><span class="p">(</span><span class="n">k</span><span class="p">,</span><span class="n">ich</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tauGAS</span><span class="p">(</span><span class="n">k</span><span class="p">,</span><span class="n">ich</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="mf">0.0_RP</span><span class="o">**</span><span class="n">factPT</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">length</span>
+<span class="w">     </span><span class="k">enddo</span>
+<span class="k">  enddo</span>
+</pre></div>
+</div>
+</div>
+<div class="literal-block-wrapper docutils container" id="id6">
+<div class="code-block-caption"><span class="caption-text">改善後</span><a class="headerlink" href="#id6" title="Link to this code">¶</a></div>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="hll"><span class="w">  </span><span class="k">do </span><span class="n">ich</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">chmax</span>
+</span><span class="hll"><span class="w">     </span><span class="k">do </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">rd_kmax</span>
+</span><span class="w">        </span><span class="n">ip</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">indexP</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+<span class="w">        </span><span class="n">A1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">AKD</span><span class="p">(</span><span class="n">ip</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">ich</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">gasno</span><span class="p">,</span><span class="n">iw</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="w"> </span><span class="mf">1.0_RP</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">factP</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="w"> </span><span class="p">)&amp;</span>
+<span class="w">             </span><span class="o">+</span><span class="w"> </span><span class="n">AKD</span><span class="p">(</span><span class="n">ip</span><span class="w"> </span><span class="p">,</span><span class="n">ich</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">gasno</span><span class="p">,</span><span class="n">iw</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="w"> </span><span class="n">factP</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="w"> </span><span class="p">)</span>
+<span class="w">        </span><span class="n">A2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">AKD</span><span class="p">(</span><span class="n">ip</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">ich</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">gasno</span><span class="p">,</span><span class="n">iw</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="w"> </span><span class="mf">1.0_RP</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">factP</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="w"> </span><span class="p">)&amp;</span>
+<span class="w">             </span><span class="o">+</span><span class="w"> </span><span class="n">AKD</span><span class="p">(</span><span class="n">ip</span><span class="w"> </span><span class="p">,</span><span class="n">ich</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">gasno</span><span class="p">,</span><span class="n">iw</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="w"> </span><span class="n">factP</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="w"> </span><span class="p">)</span>
+<span class="w">        </span><span class="n">A3</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">AKD</span><span class="p">(</span><span class="n">ip</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">ich</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="n">gasno</span><span class="p">,</span><span class="n">iw</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="w"> </span><span class="mf">1.0_RP</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">factP</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="w"> </span><span class="p">)&amp;</span>
+<span class="w">             </span><span class="o">+</span><span class="w"> </span><span class="n">AKD</span><span class="p">(</span><span class="n">ip</span><span class="w"> </span><span class="p">,</span><span class="n">ich</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="n">gasno</span><span class="p">,</span><span class="n">iw</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="w"> </span><span class="n">factP</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="w"> </span><span class="p">)</span>
+<span class="w">        </span><span class="n">factPT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">factT32</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">A3</span><span class="o">-</span><span class="n">A2</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">A2</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">factT21</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">A2</span><span class="o">-</span><span class="n">A1</span><span class="p">)</span>
+<span class="w">        </span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gas</span><span class="p">(</span><span class="n">k</span><span class="p">,</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">,</span><span class="n">igasabs</span><span class="p">(</span><span class="n">igas</span><span class="p">,</span><span class="n">iw</span><span class="p">))</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">PPM</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">dz_std</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+<span class="w">        </span><span class="n">tauGAS</span><span class="p">(</span><span class="n">k</span><span class="p">,</span><span class="n">ich</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tauGAS</span><span class="p">(</span><span class="n">k</span><span class="p">,</span><span class="n">ich</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="mf">0.0_RP</span><span class="o">**</span><span class="n">factPT</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">length</span>
+<span class="w">     </span><span class="k">enddo</span>
+<span class="k">  enddo</span>
+</pre></div>
+</div>
+</div>
+<p>改善前および改善後コードのSIMD命令率とサイクルアカウンティング測定結果を下記グラフに示します。
+なお、性能測定条件は以下のとおりです。</p>
+<blockquote>
+<div><p>rd_kmax = 54、chmax = 5</p>
+</div></blockquote>
+<p>改善前(上段のグラフ)に対して改善後(下段のグラフ)の測定結果では、実行時間が51%減ったことが分かります。
+このとき浮動小数点演算命令実行数は35%減少し、浮動小数点演算パイプライン有効要素率は68%から86%に向上していました。</p>
+<a class="reference internal image-reference" href="_images/dtrn3.29503716.1.simd.png"><img alt="_images/dtrn3.29503716.1.simd.png" class="align-left" src="_images/dtrn3.29503716.1.simd.png" style="width: 15%;" /></a>
+<a class="reference internal image-reference" href="_images/dtrn3.29503716.1.png"><img alt="_images/dtrn3.29503716.1.png" src="_images/dtrn3.29503716.1.png" style="width: 49%;" /></a>
+<a class="reference internal image-reference" href="_images/dtrn3.29503716.2.simd.png"><img alt="_images/dtrn3.29503716.2.simd.png" class="align-left" src="_images/dtrn3.29503716.2.simd.png" style="width: 15%;" /></a>
+<a class="reference internal image-reference" href="_images/dtrn3.29503716.2.png"><img alt="_images/dtrn3.29503716.2.png" src="_images/dtrn3.29503716.2.png" style="width: 49%;" /></a>
+</section>
+<section id="id4">
+<h2><span class="section-number">2.2.3. </span>実例<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p><a class="reference external" href="https://www.hpci-office.jp/en/events/symposia/meetings_A64FX">A64FX向けチューニング技術検討会</a>
+にて、この種の事例が以下のとおり紹介されています。</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.hpci-office.jp/documents/meeting_A64FX/201209/20201209_A64FX-tuning_yamaura.pdf#page=13">A64FX Tuning - SCALE on Fugaku -</a></p></li>
+</ul>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">目次</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">1. はじめに</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="simd.html">2. SIMD化の促進</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="simd-interchange1.html">2.1. データ依存最内ループのループ交換</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">2.2. 少回転最内ループのループ交換</a></li>
+<li class="toctree-l2"><a class="reference internal" href="simd-fission.html">2.3. 不完全入れ子ループのループ分割</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="calcwait.html">3. 演算待ち時間の削減</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cachewait.html">4. キャッシュアクセス待ち時間の削減</a></li>
+<li class="toctree-l1"><a class="reference internal" href="summary.html">5. まとめ</a></li>
+</ul>
+
+  <div>
+    <h4>前のトピックへ</h4>
+    <p class="topless"><a href="simd-interchange1.html"
+                          title="前の章へ"><span class="section-number">2.1. </span>データ依存最内ループのループ交換</a></p>
+  </div>
+  <div>
+    <h4>次のトピックへ</h4>
+    <p class="topless"><a href="simd-fission.html"
+                          title="次の章へ"><span class="section-number">2.3. </span>不完全入れ子ループのループ分割</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">クイック検索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="検索" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="simd-fission.html" title="2.3. 不完全入れ子ループのループ分割"
+             >次へ</a></li>
+        <li class="right" >
+          <a href="simd-interchange1.html" title="2.1. データ依存最内ループのループ交換"
+             >前へ</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">A64FX向けチューニングドキュメント整備</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="simd.html" ><span class="section-number">2. </span>SIMD化の促進</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">2.2. </span>少回転最内ループのループ交換</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; 著作権 2023, 理化学研究所 計算科学研究センター.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,141 @@
+
+
+<!doctype html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>5. Summary &#8212; Documentation of Tuning Techniques for A64FX Processors</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="_static/bizstyle.css?v=532c1bf3" />
+    
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/bizstyle.js"></script>
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="4.3. Specifying CONTIGUOUS Attribute to Array Pointer" href="cachewait-contiguous.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="cachewait-contiguous.html" title="4.3. Specifying CONTIGUOUS Attribute to Array Pointer"
+             accesskey="P">previous</a></li>
+        <li class="nav-item nav-item-0"><a href="index.html">Documentation of Tuning Techniques for A64FX Processors</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">5. </span>Summary</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="summary">
+<h1><span class="section-number">5. </span>Summary<a class="headerlink" href="#summary" title="Link to this heading">¶</a></h1>
+<p>This document explained tuning techniques applicable to other programs in common, based on real cases presented in
+<a class="reference external" href="https://www.hpci-office.jp/en/events/symposia/meetings_A64FX">“Meetings for application code tuning on A64FX computer systems”</a>.
+These techniques showed the following speedup for loops in applied examples.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Objective</p></th>
+<th class="head"><p>Technique</p></th>
+<th class="head"><p>Speedup for applied loop</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference internal" href="simd.html"><span class="doc">Promoting Vectorization</span></a></p></td>
+<td><p><a class="reference internal" href="simd-interchange1.html"><span class="doc">Interchange of Innermost Loop with Data Dependency</span></a></p></td>
+<td><p>3.04 x</p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td><p><a class="reference internal" href="simd-interchange2.html"><span class="doc">Interchange of Innermost Loop with Small Iteration Count</span></a></p></td>
+<td><p>2.02 x</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><p><a class="reference internal" href="simd-fission.html"><span class="doc">Fission of Imperfectly Nested Loops</span></a></p></td>
+<td><p>1.19 x</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="calcwait.html"><span class="doc">Reduction of Waiting Time for Calculation</span></a></p></td>
+<td><p><a class="reference internal" href="calcwait-fission.html"><span class="doc">Fission of Loop with Large Loop Body</span></a></p></td>
+<td><p>1.78 x</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><p><a class="reference internal" href="calcwait-striping.html"><span class="doc">Striping of Innermost Loop with Small Iteration Count</span></a></p></td>
+<td><p>1.37 x</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="cachewait.html"><span class="doc">Reduction of Waiting Time for Cache Access</span></a></p></td>
+<td><p><a class="reference internal" href="cachewait-unroll.html"><span class="doc">Full-Unrolling of Innermost Loop with Non-Contiguous Data Access</span></a></p></td>
+<td><p>3.35 x</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><p><a class="reference internal" href="cachewait-soa.html"><span class="doc">Interchange of Array Dimension for AoS Layout</span></a></p></td>
+<td><p>1.51 x</p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td><p><a class="reference internal" href="cachewait-contiguous.html"><span class="doc">Specifying CONTIGUOUS Attribute to Array Pointer</span></a></p></td>
+<td><p>1.79 x</p></td>
+</tr>
+</tbody>
+</table>
+<p>Readers considering speedup of their program are recommended to look for applicable ones from these techniques, which may match the program, referring to the program’s profiling data such as CPU performance reports.</p>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">Table of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">1. Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simd.html">2. Promoting Vectorization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="calcwait.html">3. Reduction of Waiting Time for Calculation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cachewait.html">4. Reduction of Waiting Time for Cache Access</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">5. Summary</a></li>
+</ul>
+
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="cachewait-contiguous.html"
+                          title="previous chapter"><span class="section-number">4.3. </span>Specifying CONTIGUOUS Attribute to Array Pointer</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="cachewait-contiguous.html" title="4.3. Specifying CONTIGUOUS Attribute to Array Pointer"
+             >previous</a></li>
+        <li class="nav-item nav-item-0"><a href="index.html">Documentation of Tuning Techniques for A64FX Processors</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">5. </span>Summary</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2023, RIKEN Center for Computational Science.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

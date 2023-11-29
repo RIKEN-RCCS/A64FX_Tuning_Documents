@@ -1,0 +1,195 @@
+
+
+<!doctype html>
+
+<html lang="ja" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>4.3. 配列ポインタへのcontiguous属性追加 &#8212; A64FX向けチューニングドキュメント整備</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="_static/bizstyle.css?v=532c1bf3" />
+    
+    <script src="_static/documentation_options.js?v=c033477b"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/translations.js?v=4dbe4bdc"></script>
+    <script src="_static/bizstyle.js"></script>
+    <link rel="search" title="検索" href="search.html" />
+    <link rel="next" title="5. まとめ" href="summary.html" />
+    <link rel="prev" title="4.2. AoS型多次元配列の次元入れ替え" href="cachewait-soa.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="summary.html" title="5. まとめ"
+             accesskey="N">次へ</a></li>
+        <li class="right" >
+          <a href="cachewait-soa.html" title="4.2. AoS型多次元配列の次元入れ替え"
+             accesskey="P">前へ</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">A64FX向けチューニングドキュメント整備</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="cachewait.html" accesskey="U"><span class="section-number">4. </span>キャッシュアクセス待ち時間の削減</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.3. </span>配列ポインタへのcontiguous属性追加</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="contiguous">
+<h1><span class="section-number">4.3. </span>配列ポインタへのcontiguous属性追加<a class="headerlink" href="#contiguous" title="Link to this heading">¶</a></h1>
+<section id="id1">
+<h2><span class="section-number">4.3.1. </span>動機<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>Fortran言語において、contiguous属性を指定した配列ポインタは、contiguousである指示先とのみポインタ結合することができます。
+そのため、配列ポインタにcontiguous属性が指定された場合、ポインタ結合先が連続領域であることを前提として、富士通Fortranコンパイラは配列アクセスのオブジェクトコードを最適化します。</p>
+<p>すなわち、配列ポインタにcontiguous属性を指定できる場合、配列アクセスが明示的に連続となり、
+<strong>プロセッサのキャッシュアクセス負荷が軽減</strong>
+されて、実行時間を短縮できる可能性があります。</p>
+</section>
+<section id="id2">
+<h2><span class="section-number">4.3.2. </span>適用例<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p><a class="reference external" href="https://www.cs.virginia.edu/stream/FTP/Code/stream.f">STREAMベンチマーク</a>
+にもとづくコード例を用いて、性能改善の例を以下に示します。
+この例では、割付け配列と結合する配列ポインタpa、pbおよびpcに対して、contiguous属性を付与しています。</p>
+<div class="literal-block-wrapper docutils container" id="id5">
+<div class="code-block-caption"><span class="caption-text">改善前</span><a class="headerlink" href="#id5" title="Link to this code">¶</a></div>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="k">TYPE </span><span class="n">dtype</span>
+<span class="w">  </span><span class="kt">REAL</span><span class="p">(</span><span class="nb">KIND</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">DIMENSION</span><span class="p">(:),</span><span class="w"> </span><span class="k">ALLOCATABLE</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="n">c</span>
+<span class="k">END TYPE </span><span class="n">dtype</span>
+</pre></div>
+</div>
+</div>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="k">TYPE</span><span class="p">(</span><span class="n">dtype</span><span class="p">),</span><span class="w"> </span><span class="k">TARGET</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">dtarg</span>
+<span class="w">    </span><span class="kt">REAL</span><span class="p">(</span><span class="nb">KIND</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">DIMENSION</span><span class="p">(:),</span><span class="w"> </span><span class="k">POINTER</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">pa</span><span class="p">,</span><span class="w"> </span><span class="n">pb</span><span class="p">,</span><span class="w"> </span><span class="n">pc</span>
+
+<span class="w">    </span><span class="n">pa</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">dtarg</span><span class="p">%</span><span class="n">a</span>
+<span class="w">    </span><span class="n">pb</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">dtarg</span><span class="p">%</span><span class="n">b</span>
+<span class="w">    </span><span class="n">pc</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">dtarg</span><span class="p">%</span><span class="n">c</span>
+<span class="c">!$OMP PARALLEL DO</span>
+<span class="c">!OCL NORECURRENCE</span>
+<span class="w">    </span><span class="k">DO </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">n</span>
+<span class="w">       </span><span class="n">pa</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pb</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">scalar</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">pc</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+<span class="w">    </span><span class="k">END DO</span>
+</pre></div>
+</div>
+<div class="literal-block-wrapper docutils container" id="id6">
+<div class="code-block-caption"><span class="caption-text">改善後</span><a class="headerlink" href="#id6" title="Link to this code">¶</a></div>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="k">TYPE</span><span class="p">(</span><span class="n">dtype</span><span class="p">),</span><span class="w"> </span><span class="k">TARGET</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">dtarg</span>
+<span class="hll"><span class="w">    </span><span class="kt">REAL</span><span class="p">(</span><span class="nb">KIND</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">DIMENSION</span><span class="p">(:),</span><span class="w"> </span><span class="k">POINTER</span><span class="p">,</span><span class="w"> </span><span class="k">CONTIGUOUS</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">pa</span><span class="p">,</span><span class="w"> </span><span class="n">pb</span><span class="p">,</span><span class="w"> </span><span class="n">pc</span>
+</span>
+<span class="w">    </span><span class="n">pa</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">dtarg</span><span class="p">%</span><span class="n">a</span>
+<span class="w">    </span><span class="n">pb</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">dtarg</span><span class="p">%</span><span class="n">b</span>
+<span class="w">    </span><span class="n">pc</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">dtarg</span><span class="p">%</span><span class="n">c</span>
+<span class="c">!$OMP PARALLEL DO</span>
+<span class="c">!OCL NORECURRENCE</span>
+<span class="w">    </span><span class="k">DO </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">n</span>
+<span class="w">       </span><span class="n">pa</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pb</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">scalar</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">pc</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+<span class="w">    </span><span class="k">END DO</span>
+</pre></div>
+</div>
+</div>
+<p>改善前および改善後コードのサイクルアカウンティング測定結果を下記グラフに示します。
+なお性能測定条件は、L2キャッシュでのブロッキングを想定し以下としました。</p>
+<blockquote>
+<div><p>n = 196608</p>
+</div></blockquote>
+<p>改善前(左のグラフ)に対して改善後(右のグラフ)の測定結果では、L1Dキャッシュビジー時間が半減し、L2キャッシュアクセス待ち時間が支配的になり、実行時間が44%減ったことが分かります。</p>
+<a class="reference internal image-reference" href="_images/triadt.29503716.0.png"><img alt="_images/triadt.29503716.0.png" src="_images/triadt.29503716.0.png" style="width: 49%;" /></a>
+<a class="reference internal image-reference" href="_images/triadt.29503716.1.png"><img alt="_images/triadt.29503716.1.png" src="_images/triadt.29503716.1.png" style="width: 49%;" /></a>
+</section>
+<section id="id3">
+<h2><span class="section-number">4.3.3. </span>実例<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p><a class="reference external" href="https://www.hpci-office.jp/en/events/symposia/meetings_A64FX">A64FX向けチューニング技術検討会</a>
+にて、この種の事例が以下のとおり紹介されています。</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.hpci-office.jp/documents/meeting_A64FX/201223/20201223_Kobayashi_Tuning.pdf#page=14">Optimization of GENESIS on Fugaku</a></p></li>
+</ul>
+</section>
+<section id="id4">
+<h2><span class="section-number">4.3.4. </span>参考資料<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/ja/manuals/tcsds-1.2.37/lang/Fortran/j2ul-2557-01z0.pdf#page=168">Fortran文法書 &quot;2.88 CONTIGUOUS文&quot;</a></p></li>
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/ja/programming_guides/Fortran_Programming_Guide_JA.pdf#page=147">プログラミングガイド Fortran編 &quot;contiguous属性&quot;</a></p></li>
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/ja/programming_guides/Fortran_Programming_Guide_JA.pdf#page=162">プログラミングガイド Fortran編 &quot;pointerの性能チューニング&quot;</a></p></li>
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/ja/programming_guides/Tuning_Programming_Guide_JA.pdf#page=176">プログラミングガイド チューニング編 &quot;ポインタ変数が含まれるループ(contiguous属性指示)&quot;</a></p></li>
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/ja/programming_guides/app-tuning-pattern-Nihongo.pdf#page=60">アプリケーションのタイプ別CPU性能チューニング &quot;5.4.7 コンパイラ最適化の補完 -ポインタ配列のcontiguous属性付加-&quot;</a></p></li>
+</ul>
+<p>注意: 上記ドキュメントの参照には
+<a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/">スーパーコンピュータ「富岳」利用者ポータル</a>
+のアクセス権が必要です。</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">目次</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">1. はじめに</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simd.html">2. SIMD化の促進</a></li>
+<li class="toctree-l1"><a class="reference internal" href="calcwait.html">3. 演算待ち時間の削減</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="cachewait.html">4. キャッシュアクセス待ち時間の削減</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="cachewait-unroll.html">4.1. 非連続アクセス最内ループのフルアンローリング</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cachewait-soa.html">4.2. AoS型多次元配列の次元入れ替え</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">4.3. 配列ポインタへのcontiguous属性追加</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="summary.html">5. まとめ</a></li>
+</ul>
+
+  <div>
+    <h4>前のトピックへ</h4>
+    <p class="topless"><a href="cachewait-soa.html"
+                          title="前の章へ"><span class="section-number">4.2. </span>AoS型多次元配列の次元入れ替え</a></p>
+  </div>
+  <div>
+    <h4>次のトピックへ</h4>
+    <p class="topless"><a href="summary.html"
+                          title="次の章へ"><span class="section-number">5. </span>まとめ</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">クイック検索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="検索" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="summary.html" title="5. まとめ"
+             >次へ</a></li>
+        <li class="right" >
+          <a href="cachewait-soa.html" title="4.2. AoS型多次元配列の次元入れ替え"
+             >前へ</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">A64FX向けチューニングドキュメント整備</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="cachewait.html" ><span class="section-number">4. </span>キャッシュアクセス待ち時間の削減</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.3. </span>配列ポインタへのcontiguous属性追加</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; 著作権 2023, 理化学研究所 計算科学研究センター.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

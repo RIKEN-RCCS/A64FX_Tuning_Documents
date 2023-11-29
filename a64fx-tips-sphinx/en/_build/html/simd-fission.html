@@ -1,0 +1,255 @@
+
+
+<!doctype html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>2.3. Fission of Imperfectly Nested Loops &#8212; Documentation of Tuning Techniques for A64FX Processors</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="_static/bizstyle.css?v=532c1bf3" />
+    
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/bizstyle.js"></script>
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="3. Reduction of Waiting Time for Calculation" href="calcwait.html" />
+    <link rel="prev" title="2.2. Interchange of Innermost Loop with Small Iteration Count" href="simd-interchange2.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="calcwait.html" title="3. Reduction of Waiting Time for Calculation"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="simd-interchange2.html" title="2.2. Interchange of Innermost Loop with Small Iteration Count"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Documentation of Tuning Techniques for A64FX Processors</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="simd.html" accesskey="U"><span class="section-number">2. </span>Promoting Vectorization</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">2.3. </span>Fission of Imperfectly Nested Loops</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="fission-of-imperfectly-nested-loops">
+<h1><span class="section-number">2.3. </span>Fission of Imperfectly Nested Loops<a class="headerlink" href="#fission-of-imperfectly-nested-loops" title="Link to this heading">¶</a></h1>
+<section id="motivation">
+<h2><span class="section-number">2.3.1. </span>Motivation<a class="headerlink" href="#motivation" title="Link to this heading">¶</a></h2>
+<p>Fujitsu Fortran/C/C++ compilers vectorize innermost loops.
+Therefore, if nested loops are not perfectly nested, i.e. there is an executed statement outside the innermost loop, calculations outside the innermost loop are not vectorized and executed sequentially.</p>
+<div class="literal-block-wrapper docutils container" id="id1">
+<div class="code-block-caption"><span class="caption-text">Perfectly nested loops</span><a class="headerlink" href="#id1" title="Link to this code">¶</a></div>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="k">DO </span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">n</span>
+<span class="w">  </span><span class="k">DO </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">n</span>
+<span class="w">    </span><span class="n">y</span><span class="p">(</span><span class="n">j</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">y</span><span class="p">(</span><span class="n">j</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">a</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">x</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+<span class="w">  </span><span class="k">END DO</span>
+<span class="k">END DO</span>
+</pre></div>
+</div>
+</div>
+<div class="literal-block-wrapper docutils container" id="id2">
+<div class="code-block-caption"><span class="caption-text">Imperfectly nested loops</span><a class="headerlink" href="#id2" title="Link to this code">¶</a></div>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="k">DO </span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">n</span>
+<span class="w">  </span><span class="k">DO </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">n</span>
+<span class="w">    </span><span class="n">y</span><span class="p">(</span><span class="n">j</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">y</span><span class="p">(</span><span class="n">j</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">a</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">x</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+<span class="w">  </span><span class="k">END DO</span>
+<span class="hll"><span class="k">  </span><span class="n">y</span><span class="p">(</span><span class="n">j</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">y</span><span class="p">(</span><span class="n">j</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">a</span><span class="p">(</span><span class="n">j</span><span class="p">,</span><span class="n">j</span><span class="p">)</span>
+</span><span class="k">END DO</span>
+</pre></div>
+</div>
+</div>
+<p>When ratio of calculations outside the innermost loop is not ignorable, fission of imperfectly nested loops, which makes multiple perfectly nested loops, might
+<strong>improve ratio of vectorized calculations</strong>.</p>
+<div class="literal-block-wrapper docutils container" id="id3">
+<div class="code-block-caption"><span class="caption-text">After loop fission</span><a class="headerlink" href="#id3" title="Link to this code">¶</a></div>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="k">DO </span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">n</span>
+<span class="w">  </span><span class="k">DO </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">n</span>
+<span class="w">    </span><span class="n">y</span><span class="p">(</span><span class="n">j</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">y</span><span class="p">(</span><span class="n">j</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">a</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">x</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+<span class="w">  </span><span class="k">END DO</span>
+<span class="hll"><span class="k">END DO</span>
+</span><span class="hll"><span class="k">DO </span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">n</span>
+</span><span class="w">  </span><span class="n">y</span><span class="p">(</span><span class="n">j</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">y</span><span class="p">(</span><span class="n">j</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">a</span><span class="p">(</span><span class="n">j</span><span class="p">,</span><span class="n">j</span><span class="p">)</span>
+<span class="k">END DO</span>
+</pre></div>
+</div>
+</div>
+<p>As a result, more calculations are executed simultaneously and it might lead to reduction of execution time.</p>
+</section>
+<section id="applied-example">
+<h2><span class="section-number">2.3.2. </span>Applied Example<a class="headerlink" href="#applied-example" title="Link to this heading">¶</a></h2>
+<p>Referring to an example presented in
+<a class="reference external" href="https://www.hpci-office.jp/en/events/symposia/meetings_A64FX">“Meetings for application code tuning on A64FX computer systems”</a>,
+performance improvement by applying this technique is shown below.
+In this example, a loop for for-variable i, which is the outer loop for imperfectly nested loops, is distributed into a loop containing one for for-variable m and another for the remainder part.</p>
+<div class="literal-block-wrapper docutils container" id="id4">
+<div class="code-block-caption"><span class="caption-text">Original</span><a class="headerlink" href="#id4" title="Link to this code">¶</a></div>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="w">  </span><span class="k">for</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">p_Nq</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">k</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">for</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">p_Nq</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">j</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="k">for</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">p_Nq</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">	</span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">gbase</span>
+<span class="w">	  </span><span class="o">=</span><span class="w"> </span><span class="n">element</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">p_Nggeo</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">p_Np</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">p_Nq</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">p_Nq</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">p_Nq</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">i</span><span class="p">;</span>
+<span class="w">	</span><span class="k">const</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">r_G00</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ggeo</span><span class="p">[</span><span class="n">gbase</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">p_G00ID</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">p_Np</span><span class="p">];</span>
+<span class="w">	</span><span class="k">const</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">r_G01</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ggeo</span><span class="p">[</span><span class="n">gbase</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">p_G01ID</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">p_Np</span><span class="p">];</span>
+<span class="w">	</span><span class="k">const</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">r_G11</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ggeo</span><span class="p">[</span><span class="n">gbase</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">p_G11ID</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">p_Np</span><span class="p">];</span>
+<span class="w">	</span><span class="k">const</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">r_G12</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ggeo</span><span class="p">[</span><span class="n">gbase</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">p_G12ID</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">p_Np</span><span class="p">];</span>
+<span class="w">	</span><span class="k">const</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">r_G02</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ggeo</span><span class="p">[</span><span class="n">gbase</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">p_G02ID</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">p_Np</span><span class="p">];</span>
+<span class="w">	</span><span class="k">const</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">r_G22</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ggeo</span><span class="p">[</span><span class="n">gbase</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">p_G22ID</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">p_Np</span><span class="p">];</span>
+<span class="w">	</span><span class="kt">double</span><span class="w"> </span><span class="n">qr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.f</span><span class="p">;</span>
+<span class="w">	</span><span class="kt">double</span><span class="w"> </span><span class="n">qs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.f</span><span class="p">;</span>
+<span class="w">	</span><span class="kt">double</span><span class="w"> </span><span class="n">qt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.f</span><span class="p">;</span>
+<span class="w">	</span><span class="k">for</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">m</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">m</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">p_Nq</span><span class="p">;</span><span class="w"> </span><span class="n">m</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">	  </span><span class="n">qr</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">s_D</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">m</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">s_q</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">j</span><span class="p">][</span><span class="n">m</span><span class="p">];</span>
+<span class="w">	  </span><span class="n">qs</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">s_D</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="n">m</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">s_q</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">m</span><span class="p">][</span><span class="n">i</span><span class="p">];</span>
+<span class="w">	  </span><span class="n">qt</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">s_D</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">m</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">s_q</span><span class="p">[</span><span class="n">m</span><span class="p">][</span><span class="n">j</span><span class="p">][</span><span class="n">i</span><span class="p">];</span>
+<span class="w">	</span><span class="p">}</span>
+<span class="w">	</span><span class="n">s_Gqr</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">j</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">r_G00</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">qr</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">r_G01</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">qs</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">r_G02</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">qt</span><span class="p">;</span>
+<span class="w">	</span><span class="n">s_Gqs</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">j</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">r_G01</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">qr</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">r_G11</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">qs</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">r_G12</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">qt</span><span class="p">;</span>
+<span class="w">	</span><span class="n">s_Gqt</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">j</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">r_G02</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">qr</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">r_G12</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">qs</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">r_G22</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">qt</span><span class="p">;</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="literal-block-wrapper docutils container" id="id5">
+<div class="code-block-caption"><span class="caption-text">Technique applied</span><a class="headerlink" href="#id5" title="Link to this code">¶</a></div>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="w">  </span><span class="kt">double</span><span class="w">	</span><span class="n">qr</span><span class="p">[</span><span class="n">p_Nq</span><span class="p">];</span>
+<span class="w">  </span><span class="kt">double</span><span class="w">	</span><span class="n">qs</span><span class="p">[</span><span class="n">p_Nq</span><span class="p">];</span>
+<span class="w">  </span><span class="kt">double</span><span class="w">	</span><span class="n">qt</span><span class="p">[</span><span class="n">p_Nq</span><span class="p">];</span>
+
+<span class="w">  </span><span class="k">for</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">p_Nq</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">k</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">for</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">p_Nq</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">j</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="k">for</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">p_Nq</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">	</span><span class="n">qr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.f</span><span class="p">;</span>
+<span class="w">	</span><span class="n">qs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.f</span><span class="p">;</span>
+<span class="w">	</span><span class="n">qt</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.f</span><span class="p">;</span>
+<span class="w">	</span><span class="k">for</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">m</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">m</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">p_Nq</span><span class="p">;</span><span class="w"> </span><span class="n">m</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">	  </span><span class="n">qr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">s_D</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">m</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">s_q</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">j</span><span class="p">][</span><span class="n">m</span><span class="p">];</span>
+<span class="w">	  </span><span class="n">qs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">s_D</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="n">m</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">s_q</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">m</span><span class="p">][</span><span class="n">i</span><span class="p">];</span>
+<span class="w">	  </span><span class="n">qt</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">s_D</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">m</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">s_q</span><span class="p">[</span><span class="n">m</span><span class="p">][</span><span class="n">j</span><span class="p">][</span><span class="n">i</span><span class="p">];</span>
+<span class="w">	</span><span class="p">}</span>
+<span class="hll"><span class="w">      </span><span class="p">}</span>
+</span><span class="cp">#pragma loop norecurrence</span>
+<span class="hll"><span class="w">      </span><span class="k">for</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">p_Nq</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span class="w">	</span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">gbase</span>
+<span class="w">	  </span><span class="o">=</span><span class="w"> </span><span class="n">element</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">p_Nggeo</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">p_Np</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">p_Nq</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">p_Nq</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">p_Nq</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">i</span><span class="p">;</span>
+<span class="w">	</span><span class="k">const</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">r_G00</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ggeo</span><span class="p">[</span><span class="n">gbase</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">p_G00ID</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">p_Np</span><span class="p">];</span>
+<span class="w">	</span><span class="k">const</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">r_G01</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ggeo</span><span class="p">[</span><span class="n">gbase</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">p_G01ID</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">p_Np</span><span class="p">];</span>
+<span class="w">	</span><span class="k">const</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">r_G11</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ggeo</span><span class="p">[</span><span class="n">gbase</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">p_G11ID</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">p_Np</span><span class="p">];</span>
+<span class="w">	</span><span class="k">const</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">r_G12</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ggeo</span><span class="p">[</span><span class="n">gbase</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">p_G12ID</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">p_Np</span><span class="p">];</span>
+<span class="w">	</span><span class="k">const</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">r_G02</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ggeo</span><span class="p">[</span><span class="n">gbase</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">p_G02ID</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">p_Np</span><span class="p">];</span>
+<span class="w">	</span><span class="k">const</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">r_G22</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ggeo</span><span class="p">[</span><span class="n">gbase</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">p_G22ID</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">p_Np</span><span class="p">];</span>
+<span class="w">	</span><span class="n">s_Gqr</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">j</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">r_G00</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">qr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">r_G01</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">qs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">r_G02</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">qt</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+<span class="w">	</span><span class="n">s_Gqs</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">j</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">r_G01</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">qr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">r_G11</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">qs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">r_G12</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">qt</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+<span class="w">	</span><span class="n">s_Gqt</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">j</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">r_G02</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">qr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">r_G12</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">qs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">r_G22</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">qt</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<p>Ratios of SIMD instructions and results of cycle accounting for executions before/after applying the technique are shown in graphs below.
+A parameter for the loop execution is as follows:</p>
+<blockquote>
+<div><p>p_Nq = 8</p>
+</div></blockquote>
+<p>Comparing the lower graph for the technique applied to the upper graph for the original, ratio of SIMD instructions was improved from 53% to 76% and execution time was reduced by 16%.</p>
+<a class="reference internal image-reference" href="_images/axhelm2.29503716.0.simd.png"><img alt="_images/axhelm2.29503716.0.simd.png" class="align-left" src="_images/axhelm2.29503716.0.simd.png" style="width: 15%;" /></a>
+<a class="reference internal image-reference" href="_images/axhelm2.29503716.0.png"><img alt="_images/axhelm2.29503716.0.png" src="_images/axhelm2.29503716.0.png" style="width: 49%;" /></a>
+<a class="reference internal image-reference" href="_images/axhelm2.29503716.1.simd.png"><img alt="_images/axhelm2.29503716.1.simd.png" class="align-left" src="_images/axhelm2.29503716.1.simd.png" style="width: 15%;" /></a>
+<a class="reference internal image-reference" href="_images/axhelm2.29503716.1.png"><img alt="_images/axhelm2.29503716.1.png" src="_images/axhelm2.29503716.1.png" style="width: 49%;" /></a>
+</section>
+<section id="real-cases">
+<h2><span class="section-number">2.3.3. </span>Real Cases<a class="headerlink" href="#real-cases" title="Link to this heading">¶</a></h2>
+<p>A real case related to this technique is presented in
+<a class="reference external" href="https://www.hpci-office.jp/en/events/symposia/meetings_A64FX">“Meetings for application code tuning on A64FX computer systems”</a>
+as follows:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.hpci-office.jp/documents/meeting_A64FX/220428/20220428_Performance_Tuning_on_Fugaku-tj-rev0.pdf#page=16">Performance tuning and analysis for the axhelm kernel in NeK5000/RS CFD codes</a></p></li>
+</ul>
+</section>
+<section id="references">
+<h2><span class="section-number">2.3.4. </span>References<a class="headerlink" href="#references" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://riken-rccs.github.io/axhelm-doc/en/build/html/tune-1a.html">Tuning document for Axhelm kernel - Alternative solution (tune-1a)</a></p></li>
+</ul>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">Table of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">1. Introduction</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="simd.html">2. Promoting Vectorization</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="simd-interchange1.html">2.1. Interchange of Innermost Loop with Data Dependency</a></li>
+<li class="toctree-l2"><a class="reference internal" href="simd-interchange2.html">2.2. Interchange of Innermost Loop with Small Iteration Count</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">2.3. Fission of Imperfectly Nested Loops</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="calcwait.html">3. Reduction of Waiting Time for Calculation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cachewait.html">4. Reduction of Waiting Time for Cache Access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="summary.html">5. Summary</a></li>
+</ul>
+
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="simd-interchange2.html"
+                          title="previous chapter"><span class="section-number">2.2. </span>Interchange of Innermost Loop with Small Iteration Count</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="calcwait.html"
+                          title="next chapter"><span class="section-number">3. </span>Reduction of Waiting Time for Calculation</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="calcwait.html" title="3. Reduction of Waiting Time for Calculation"
+             >next</a></li>
+        <li class="right" >
+          <a href="simd-interchange2.html" title="2.2. Interchange of Innermost Loop with Small Iteration Count"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Documentation of Tuning Techniques for A64FX Processors</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="simd.html" ><span class="section-number">2. </span>Promoting Vectorization</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">2.3. </span>Fission of Imperfectly Nested Loops</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2023, RIKEN Center for Computational Science.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,114 @@
+
+
+<!doctype html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Tuning Tips for A64FX Processors &#8212; Documentation of Tuning Techniques for A64FX Processors</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="_static/bizstyle.css?v=532c1bf3" />
+    
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/bizstyle.js"></script>
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="1. Introduction" href="introduction.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="introduction.html" title="1. Introduction"
+             accesskey="N">next</a></li>
+        <li class="nav-item nav-item-0"><a href="#">Documentation of Tuning Techniques for A64FX Processors</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Tuning Tips for A64FX Processors</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="tuning-tips-for-a64fx-processors">
+<h1>Tuning Tips for A64FX Processors<a class="headerlink" href="#tuning-tips-for-a64fx-processors" title="Link to this heading">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">1. Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#what-is-this-document">1.1. What is This Document</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#structure-of-this-document">1.2. Structure of This Document</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#environment-for-performance-measurement">1.3. Environment for Performance Measurement</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="simd.html">2. Promoting Vectorization</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="simd-interchange1.html">2.1. Interchange of Innermost Loop with Data Dependency</a></li>
+<li class="toctree-l2"><a class="reference internal" href="simd-interchange2.html">2.2. Interchange of Innermost Loop with Small Iteration Count</a></li>
+<li class="toctree-l2"><a class="reference internal" href="simd-fission.html">2.3. Fission of Imperfectly Nested Loops</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="calcwait.html">3. Reduction of Waiting Time for Calculation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="calcwait-fission.html">3.1. Fission of Loop with Large Loop Body</a></li>
+<li class="toctree-l2"><a class="reference internal" href="calcwait-striping.html">3.2. Striping of Innermost Loop with Small Iteration Count</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="cachewait.html">4. Reduction of Waiting Time for Cache Access</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="cachewait-unroll.html">4.1. Full-Unrolling of Innermost Loop with Non-Contiguous Data Access</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cachewait-soa.html">4.2. Interchange of Array Dimension for AoS Layout</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cachewait-contiguous.html">4.3. Specifying CONTIGUOUS Attribute to Array Pointer</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="summary.html">5. Summary</a></li>
+</ul>
+</div>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="introduction.html"
+                          title="next chapter"><span class="section-number">1. </span>Introduction</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="introduction.html" title="1. Introduction"
+             >next</a></li>
+        <li class="nav-item nav-item-0"><a href="#">Documentation of Tuning Techniques for A64FX Processors</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Tuning Tips for A64FX Processors</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2023, RIKEN Center for Computational Science.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

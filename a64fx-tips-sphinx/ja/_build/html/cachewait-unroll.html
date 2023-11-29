@@ -1,0 +1,198 @@
+
+
+<!doctype html>
+
+<html lang="ja" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>4.1. 非連続アクセス最内ループのフルアンローリング &#8212; A64FX向けチューニングドキュメント整備</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="_static/bizstyle.css?v=532c1bf3" />
+    
+    <script src="_static/documentation_options.js?v=c033477b"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/translations.js?v=4dbe4bdc"></script>
+    <script src="_static/bizstyle.js"></script>
+    <link rel="search" title="検索" href="search.html" />
+    <link rel="next" title="4.2. AoS型多次元配列の次元入れ替え" href="cachewait-soa.html" />
+    <link rel="prev" title="4. キャッシュアクセス待ち時間の削減" href="cachewait.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="cachewait-soa.html" title="4.2. AoS型多次元配列の次元入れ替え"
+             accesskey="N">次へ</a></li>
+        <li class="right" >
+          <a href="cachewait.html" title="4. キャッシュアクセス待ち時間の削減"
+             accesskey="P">前へ</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">A64FX向けチューニングドキュメント整備</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="cachewait.html" accesskey="U"><span class="section-number">4. </span>キャッシュアクセス待ち時間の削減</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.1. </span>非連続アクセス最内ループのフルアンローリング</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1><span class="section-number">4.1. </span>非連続アクセス最内ループのフルアンローリング<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<section id="id2">
+<h2><span class="section-number">4.1.1. </span>動機<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>富士通Fortran/C/C++コンパイラは最内ループをSIMD化します。
+そのため、ループ内の配列アクセスにおいて1次元目(Fortran言語の場合)が最内ループのループ変数でない場合、配列アクセスが非連続的になり、プロセッサのキャッシュアクセス負荷が高くなります。</p>
+<p>ここで、最内ループの繰り返し数が一定かつ少ない場合、当該ループをフルアンローリングすることによって、
+<strong>SIMD化されるループのループ変数を配列アクセスの1次元目</strong>
+にできるケースがあります。</p>
+<p>その結果、配列アクセスが連続的になり、プロセッサのキャッシュアクセス負荷が軽減されて、実行時間を短縮できる可能性があります。</p>
+</section>
+<section id="id3">
+<h2><span class="section-number">4.1.2. </span>適用例<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p><a class="reference external" href="https://www.hpci-office.jp/en/events/symposia/meetings_A64FX">A64FX向けチューニング技術検討会</a>
+で示されたコード例を用いて、性能改善の例を以下に示します。
+この例では、配列Fのアクセスが非連続的であるdo変数IPのループに対して、fullunroll_pre_simdの最適化制御行を適用しています。</p>
+<div class="literal-block-wrapper docutils container" id="id6">
+<div class="code-block-caption"><span class="caption-text">改善前</span><a class="headerlink" href="#id6" title="Link to this code">¶</a></div>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="c">!$OMP PARALLEL DO PRIVATE(FBUF)</span>
+<span class="w">  </span><span class="k">DO </span><span class="n">IG</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">NG3</span>
+<span class="w">     </span><span class="n">V1</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.D0</span>
+<span class="w">     </span><span class="n">V2</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.D0</span>
+<span class="w">     </span><span class="n">V3</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.D0</span>
+<span class="w">     </span><span class="n">V4</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.D0</span>
+<span class="w">     </span><span class="k">DO </span><span class="n">IP</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">15</span>
+<span class="w">        </span><span class="n">FBUF</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">F</span><span class="p">(</span><span class="n">IG</span><span class="p">,</span><span class="n">IP</span><span class="p">)</span>
+<span class="w">        </span><span class="n">V1</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">V1</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">FBUF</span>
+<span class="w">        </span><span class="n">V2</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">V2</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">FBUF</span><span class="o">*</span><span class="n">CVEL</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">IP</span><span class="p">)</span>
+<span class="w">        </span><span class="n">V3</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">V3</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">FBUF</span><span class="o">*</span><span class="n">CVEL</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="n">IP</span><span class="p">)</span>
+<span class="w">        </span><span class="n">V4</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">V4</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">FBUF</span><span class="o">*</span><span class="n">CVEL</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="n">IP</span><span class="p">)</span>
+<span class="w">     </span><span class="k">END DO</span>
+<span class="k">  END DO</span>
+</pre></div>
+</div>
+</div>
+<div class="literal-block-wrapper docutils container" id="id7">
+<div class="code-block-caption"><span class="caption-text">改善後</span><a class="headerlink" href="#id7" title="Link to this code">¶</a></div>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="c">!$OMP PARALLEL DO PRIVATE(FBUF)</span>
+<span class="w">  </span><span class="k">DO </span><span class="n">IG</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">NG3</span>
+<span class="w">     </span><span class="n">V1</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.D0</span>
+<span class="w">     </span><span class="n">V2</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.D0</span>
+<span class="w">     </span><span class="n">V3</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.D0</span>
+<span class="w">     </span><span class="n">V4</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.D0</span>
+<span class="hll"><span class="c">!OCL FULLUNROLL_PRE_SIMD</span>
+</span><span class="w">     </span><span class="k">DO </span><span class="n">IP</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">15</span>
+<span class="w">        </span><span class="n">FBUF</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">F</span><span class="p">(</span><span class="n">IG</span><span class="p">,</span><span class="n">IP</span><span class="p">)</span>
+<span class="w">        </span><span class="n">V1</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">V1</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">FBUF</span>
+<span class="w">        </span><span class="n">V2</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">V2</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">FBUF</span><span class="o">*</span><span class="n">CVEL</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">IP</span><span class="p">)</span>
+<span class="w">        </span><span class="n">V3</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">V3</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">FBUF</span><span class="o">*</span><span class="n">CVEL</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="n">IP</span><span class="p">)</span>
+<span class="w">        </span><span class="n">V4</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">V4</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">FBUF</span><span class="o">*</span><span class="n">CVEL</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="n">IP</span><span class="p">)</span>
+<span class="w">     </span><span class="k">END DO</span>
+<span class="k">  END DO</span>
+</pre></div>
+</div>
+</div>
+<p>改善前および改善後コードのサイクルアカウンティング測定結果を下記グラフに示します。
+なお、性能測定条件は以下のとおりです。</p>
+<blockquote>
+<div><p>NG3 = 131 <sup>3</sup></p>
+</div></blockquote>
+<p>改善前(左のグラフ)に対して改善後(右のグラフ)の測定結果では、L1Dキャッシュビジー時間が半減、L1Dキャッシュアクセス待ち時間が激減し、実行時間が70%減ったことが分かります。</p>
+<a class="reference internal image-reference" href="_images/ffx.29503716.0.png"><img alt="_images/ffx.29503716.0.png" src="_images/ffx.29503716.0.png" style="width: 49%;" /></a>
+<a class="reference internal image-reference" href="_images/ffx.29503716.1.png"><img alt="_images/ffx.29503716.1.png" src="_images/ffx.29503716.1.png" style="width: 49%;" /></a>
+</section>
+<section id="id4">
+<h2><span class="section-number">4.1.3. </span>実例<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p><a class="reference external" href="https://www.hpci-office.jp/en/events/symposia/meetings_A64FX">A64FX向けチューニング技術検討会</a>
+にて、この種の事例が以下のとおり紹介されています。</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.hpci-office.jp/documents/meeting_A64FX/220428/20220428_Performance_Tuning_on_Fugaku-tj-rev0.pdf#page=42">Performance tuning and analysis for the axhelm kernel in NeK5000/RS CFD codes</a></p></li>
+<li><p><a class="reference external" href="https://www.hpci-office.jp/documents/meeting_A64FX/220727/Examples_of_serial-code_opt_for_A64FX-RIST-20220725.pdf#page=14">Examples of serial-code optimization for A64FX processor cores</a></p></li>
+</ul>
+</section>
+<section id="id5">
+<h2><span class="section-number">4.1.4. </span>参考資料<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/ja/manuals/tcsds-1.2.37/lang/Fortran/j2ul-2558-01z0.pdf#page=257">Fortran使用手引書 &quot;9.1.1.4 ループアンローリング&quot;</a></p></li>
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/ja/manuals/tcsds-1.2.37/lang/C/j2ul-2560-01z0.pdf#page=62">C言語使用手引書 &quot;3.2.4 ループアンローリング&quot;</a></p></li>
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/ja/manuals/tcsds-1.2.37/lang/C++/j2ul-2561-01z0.pdf#page=65">C++言語使用手引書 &quot;3.2.4 ループアンローリング&quot;</a></p></li>
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/ja/programming_guides/Fortran_Programming_Guide_JA.pdf#page=48">プログラミングガイド Fortran編 &quot;FULLUNROLL_PRE_SIMD&quot;</a></p></li>
+</ul>
+<p>注意: 上記ドキュメントの参照には
+<a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/">スーパーコンピュータ「富岳」利用者ポータル</a>
+のアクセス権が必要です。</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">目次</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">1. はじめに</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simd.html">2. SIMD化の促進</a></li>
+<li class="toctree-l1"><a class="reference internal" href="calcwait.html">3. 演算待ち時間の削減</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="cachewait.html">4. キャッシュアクセス待ち時間の削減</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">4.1. 非連続アクセス最内ループのフルアンローリング</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cachewait-soa.html">4.2. AoS型多次元配列の次元入れ替え</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cachewait-contiguous.html">4.3. 配列ポインタへのcontiguous属性追加</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="summary.html">5. まとめ</a></li>
+</ul>
+
+  <div>
+    <h4>前のトピックへ</h4>
+    <p class="topless"><a href="cachewait.html"
+                          title="前の章へ"><span class="section-number">4. </span>キャッシュアクセス待ち時間の削減</a></p>
+  </div>
+  <div>
+    <h4>次のトピックへ</h4>
+    <p class="topless"><a href="cachewait-soa.html"
+                          title="次の章へ"><span class="section-number">4.2. </span>AoS型多次元配列の次元入れ替え</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">クイック検索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="検索" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="cachewait-soa.html" title="4.2. AoS型多次元配列の次元入れ替え"
+             >次へ</a></li>
+        <li class="right" >
+          <a href="cachewait.html" title="4. キャッシュアクセス待ち時間の削減"
+             >前へ</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">A64FX向けチューニングドキュメント整備</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="cachewait.html" ><span class="section-number">4. </span>キャッシュアクセス待ち時間の削減</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.1. </span>非連続アクセス最内ループのフルアンローリング</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; 著作権 2023, 理化学研究所 計算科学研究センター.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

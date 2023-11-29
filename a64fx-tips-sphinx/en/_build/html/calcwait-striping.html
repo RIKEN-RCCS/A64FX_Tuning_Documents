@@ -1,0 +1,262 @@
+
+
+<!doctype html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>3.2. Striping of Innermost Loop with Small Iteration Count &#8212; Documentation of Tuning Techniques for A64FX Processors</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="_static/bizstyle.css?v=532c1bf3" />
+    
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/bizstyle.js"></script>
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="4. Reduction of Waiting Time for Cache Access" href="cachewait.html" />
+    <link rel="prev" title="3.1. Fission of Loop with Large Loop Body" href="calcwait-fission.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="cachewait.html" title="4. Reduction of Waiting Time for Cache Access"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="calcwait-fission.html" title="3.1. Fission of Loop with Large Loop Body"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Documentation of Tuning Techniques for A64FX Processors</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="calcwait.html" accesskey="U"><span class="section-number">3. </span>Reduction of Waiting Time for Calculation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">3.2. </span>Striping of Innermost Loop with Small Iteration Count</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="striping-of-innermost-loop-with-small-iteration-count">
+<h1><span class="section-number">3.2. </span>Striping of Innermost Loop with Small Iteration Count<a class="headerlink" href="#striping-of-innermost-loop-with-small-iteration-count" title="Link to this heading">¶</a></h1>
+<section id="motivation">
+<h2><span class="section-number">3.2.1. </span>Motivation<a class="headerlink" href="#motivation" title="Link to this heading">¶</a></h2>
+<p>Fujitsu Fortran/C/C++ compilers try to apply a compiler optimization of software pipelining for exploiting computational performance of A64FX processors.
+However, since the software pipelining schedules calculations for several different loop iterations to be executed in parallel, there are cases where effect of the optimization can not be obtained when a loop of optimization target has a small iteration count.</p>
+<p>In such cases, users can
+<strong>advise the compilers to apply an optimization of loop striping</strong>
+as shown below, by inserting an Optimization Control Line (OCL) of “striping” into the source program.</p>
+<div class="literal-block-wrapper docutils container" id="id1">
+<div class="code-block-caption"><span class="caption-text">Source program</span><a class="headerlink" href="#id1" title="Link to this code">¶</a></div>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="k">DO </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">n</span>
+<span class="w">  </span><span class="n">a</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">b</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">c</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+<span class="k">END DO</span>
+</pre></div>
+</div>
+</div>
+<div class="literal-block-wrapper docutils container" id="id2">
+<div class="code-block-caption"><span class="caption-text">Pseudo code after applying loop striping</span><a class="headerlink" href="#id2" title="Link to this code">¶</a></div>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="hll"><span class="k">DO </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span>
+</span><span class="w">  </span><span class="n">tmp_b1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">b</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+<span class="w">  </span><span class="n">tmp_b2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">b</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+<span class="w">  </span><span class="n">tmp_c1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">c</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+<span class="w">  </span><span class="n">tmp_c2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">c</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+<span class="w">  </span><span class="n">tmp_a1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tmp_b1</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">bmp_c1</span>
+<span class="w">  </span><span class="n">tmp_a2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tmp_b2</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">tmp_c2</span>
+<span class="w">  </span><span class="n">a</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tmp_a1</span>
+<span class="w">  </span><span class="n">a</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tmp_a2</span>
+<span class="k">END DO</span>
+</pre></div>
+</div>
+</div>
+<p>As a result, even if the iteration count is relatively small, calculations for different loop iterations are executed in parallel and it might lead to reduction of execution time.</p>
+</section>
+<section id="applied-example">
+<h2><span class="section-number">3.2.2. </span>Applied Example<a class="headerlink" href="#applied-example" title="Link to this heading">¶</a></h2>
+<p>Referring to an example presented in
+<a class="reference external" href="https://www.hpci-office.jp/en/events/symposia/meetings_A64FX">“Meetings for application code tuning on A64FX computer systems”</a>,
+performance improvement by applying this technique is shown below.
+In this example, an OCL of “striping” was added to a loop for for-variable jj, which has a relatively small iteration count.</p>
+<div class="literal-block-wrapper docutils container" id="id3">
+<div class="code-block-caption"><span class="caption-text">Original</span><a class="headerlink" href="#id3" title="Link to this code">¶</a></div>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="cp">#pragma loop norecurrence</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">jj</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">jj</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">jnum</span><span class="p">;</span><span class="w"> </span><span class="n">jj</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="n">flt_t</span><span class="w"> </span><span class="n">forcelj</span><span class="p">,</span><span class="w"> </span><span class="n">evdwl</span><span class="p">;</span>
+<span class="w">      </span><span class="n">forcelj</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">evdwl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">flt_t</span><span class="p">)</span><span class="mf">0.0</span><span class="p">;</span>
+<span class="w">      </span><span class="kt">int</span><span class="w"> </span><span class="n">j</span><span class="p">,</span><span class="w"> </span><span class="n">jtype</span><span class="p">,</span><span class="w"> </span><span class="n">sbindex</span><span class="p">;</span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">ONETYPE</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">	</span><span class="n">sbindex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">jlist</span><span class="p">[</span><span class="n">jj</span><span class="p">]</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">SBBITS</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mi">3</span><span class="p">;</span>
+<span class="w">	</span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">jlist</span><span class="p">[</span><span class="n">jj</span><span class="p">]</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">NEIGHMASK</span><span class="p">;</span>
+<span class="w">      </span><span class="p">}</span><span class="w"> </span><span class="k">else</span>
+<span class="w">	</span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">jlist</span><span class="p">[</span><span class="n">jj</span><span class="p">];</span>
+<span class="w">      </span><span class="k">const</span><span class="w"> </span><span class="n">flt_t</span><span class="w"> </span><span class="n">delx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">xtmp</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">x</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">x</span><span class="p">;</span>
+<span class="w">      </span><span class="k">const</span><span class="w"> </span><span class="n">flt_t</span><span class="w"> </span><span class="n">dely</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ytmp</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">x</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">y</span><span class="p">;</span>
+<span class="w">      </span><span class="k">const</span><span class="w"> </span><span class="n">flt_t</span><span class="w"> </span><span class="n">delz</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ztmp</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">x</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">z</span><span class="p">;</span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">ONETYPE</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">	</span><span class="n">jtype</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">w</span><span class="p">;</span>
+<span class="w">	</span><span class="n">cutsq</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ljc12oi</span><span class="p">[</span><span class="n">jtype</span><span class="p">].</span><span class="n">cutsq</span><span class="p">;</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">      </span><span class="k">const</span><span class="w"> </span><span class="n">flt_t</span><span class="w"> </span><span class="n">rsq</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">delx</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">delx</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">dely</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">dely</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">delz</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">delz</span><span class="p">;</span>
+<span class="w">      </span><span class="n">flt_t</span><span class="w"> </span><span class="n">factor_lj</span><span class="p">;</span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">ONETYPE</span><span class="p">)</span><span class="w"> </span><span class="n">factor_lj</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">special_lj</span><span class="p">[</span><span class="n">sbindex</span><span class="p">];</span>
+<span class="w">      </span><span class="n">flt_t</span><span class="w"> </span><span class="n">r2inv</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">rsq</span><span class="p">;</span>
+<span class="w">      </span><span class="n">flt_t</span><span class="w"> </span><span class="n">r6inv</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">r2inv</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">r2inv</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">r2inv</span><span class="p">;</span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">rsq</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">cutsq</span><span class="p">)</span><span class="w"> </span><span class="n">r6inv</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">flt_t</span><span class="p">)</span><span class="mf">0.0</span><span class="p">;</span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">ONETYPE</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">	</span><span class="n">lj1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ljc12oi</span><span class="p">[</span><span class="n">jtype</span><span class="p">].</span><span class="n">lj1</span><span class="p">;</span>
+<span class="w">	</span><span class="n">lj2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ljc12oi</span><span class="p">[</span><span class="n">jtype</span><span class="p">].</span><span class="n">lj2</span><span class="p">;</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">      </span><span class="n">forcelj</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">r6inv</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="n">lj1</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">r6inv</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">lj2</span><span class="p">);</span>
+<span class="w">      </span><span class="n">flt_t</span><span class="w"> </span><span class="n">fpair</span><span class="p">;</span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">ONETYPE</span><span class="p">)</span>
+<span class="w">	</span><span class="n">fpair</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">factor_lj</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">forcelj</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">r2inv</span><span class="p">;</span>
+<span class="w">      </span><span class="k">else</span>
+<span class="w">	</span><span class="n">fpair</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">forcelj</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">r2inv</span><span class="p">;</span>
+<span class="w">      </span><span class="k">const</span><span class="w"> </span><span class="n">flt_t</span><span class="w"> </span><span class="n">fpx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fpair</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">delx</span><span class="p">;</span>
+<span class="w">      </span><span class="n">fxtmp</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">fpx</span><span class="p">;</span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">NEWTON_PAIR</span><span class="p">)</span><span class="w"> </span><span class="n">f</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">x</span><span class="w"> </span><span class="o">-=</span><span class="w"> </span><span class="n">fpx</span><span class="p">;</span>
+<span class="w">      </span><span class="k">const</span><span class="w"> </span><span class="n">flt_t</span><span class="w"> </span><span class="n">fpy</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fpair</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">dely</span><span class="p">;</span>
+<span class="w">      </span><span class="n">fytmp</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">fpy</span><span class="p">;</span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">NEWTON_PAIR</span><span class="p">)</span><span class="w"> </span><span class="n">f</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">y</span><span class="w"> </span><span class="o">-=</span><span class="w"> </span><span class="n">fpy</span><span class="p">;</span>
+<span class="w">      </span><span class="k">const</span><span class="w"> </span><span class="n">flt_t</span><span class="w"> </span><span class="n">fpz</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fpair</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">delz</span><span class="p">;</span>
+<span class="w">      </span><span class="n">fztmp</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">fpz</span><span class="p">;</span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">NEWTON_PAIR</span><span class="p">)</span><span class="w"> </span><span class="n">f</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">z</span><span class="w"> </span><span class="o">-=</span><span class="w"> </span><span class="n">fpz</span><span class="p">;</span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">EFLAG</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">	</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">ONETYPE</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">	  </span><span class="n">lj3</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lj34i</span><span class="p">[</span><span class="n">jtype</span><span class="p">].</span><span class="n">lj3</span><span class="p">;</span>
+<span class="w">	  </span><span class="n">lj4</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lj34i</span><span class="p">[</span><span class="n">jtype</span><span class="p">].</span><span class="n">lj4</span><span class="p">;</span>
+<span class="w">	  </span><span class="n">offset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ljc12oi</span><span class="p">[</span><span class="n">jtype</span><span class="p">].</span><span class="n">offset</span><span class="p">;</span>
+<span class="w">	</span><span class="p">}</span>
+<span class="w">	</span><span class="n">evdwl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">r6inv</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="n">lj3</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">r6inv</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">lj4</span><span class="p">);</span>
+<span class="w">	</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">rsq</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">cutsq</span><span class="p">)</span><span class="w"> </span><span class="n">evdwl</span><span class="w"> </span><span class="o">-=</span><span class="w"> </span><span class="n">offset</span><span class="p">;</span>
+<span class="w">	</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">ONETYPE</span><span class="p">)</span><span class="w"> </span><span class="n">evdwl</span><span class="w"> </span><span class="o">*=</span><span class="w"> </span><span class="n">factor_lj</span><span class="p">;</span>
+<span class="w">	</span><span class="n">sevdwl</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">evdwl</span><span class="p">;</span>
+<span class="w">	</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">eatom</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">	  </span><span class="n">fwtmp</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="p">(</span><span class="n">flt_t</span><span class="p">)</span><span class="mf">0.5</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">evdwl</span><span class="p">;</span>
+<span class="w">	  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">NEWTON_PAIR</span><span class="p">)</span>
+<span class="w">	    </span><span class="n">f</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">w</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="p">(</span><span class="n">flt_t</span><span class="p">)</span><span class="mf">0.5</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">evdwl</span><span class="p">;</span>
+<span class="w">	</span><span class="p">}</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">NEWTON_PAIR</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span>
+<span class="w">	</span><span class="n">IP_PRE_ev_tally_nborv</span><span class="p">(</span><span class="n">vflag</span><span class="p">,</span><span class="w"> </span><span class="n">delx</span><span class="p">,</span><span class="w"> </span><span class="n">dely</span><span class="p">,</span><span class="w"> </span><span class="n">delz</span><span class="p">,</span><span class="w"> </span><span class="n">fpx</span><span class="p">,</span><span class="w"> </span><span class="n">fpy</span><span class="p">,</span><span class="w"> </span><span class="n">fpz</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="literal-block-wrapper docutils container" id="id4">
+<div class="code-block-caption"><span class="caption-text">Technique applied</span><a class="headerlink" href="#id4" title="Link to this code">¶</a></div>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="cp">#pragma loop norecurrence</span>
+<span class="hll"><span class="cp">#pragma loop striping 2</span>
+</span><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">jj</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">jj</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">jnum</span><span class="p">;</span><span class="w"> </span><span class="n">jj</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="p">...</span>
+<span class="w">    </span><span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<p>Results of cycle accounting for executions before/after applying the technique are shown in graphs below.
+Parameters for the loop execution are as follows:</p>
+<blockquote>
+<div><p>ONETYPE =1, EFLAG = 0, NEWTON_PAIR = 1, jnum = 26~49 (37.5 on average)</p>
+</div></blockquote>
+<p>Comparing the right graph for the technique applied to the left graph for the original, waiting time for floating-point calculation and L1D cache access decreased and execution time was reduced by 27%.
+In this example, decrease of waiting time for L1D cache access is considered to be due to many non-contiguous array references.</p>
+<a class="reference internal image-reference" href="_images/pairljcutintel.29503716.0.png"><img alt="_images/pairljcutintel.29503716.0.png" src="_images/pairljcutintel.29503716.0.png" style="width: 49%;" /></a>
+<a class="reference internal image-reference" href="_images/pairljcutintel.29503716.1.png"><img alt="_images/pairljcutintel.29503716.1.png" src="_images/pairljcutintel.29503716.1.png" style="width: 49%;" /></a>
+</section>
+<section id="real-cases">
+<h2><span class="section-number">3.2.3. </span>Real Cases<a class="headerlink" href="#real-cases" title="Link to this heading">¶</a></h2>
+<p>Real cases related to this technique are presented in
+<a class="reference external" href="https://www.hpci-office.jp/en/events/symposia/meetings_A64FX">“Meetings for application code tuning on A64FX computer systems”</a>
+as follows:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.hpci-office.jp/documents/meeting_A64FX/210427/lmp_tune_for_a64fx_27Apr2021_final.pdf#page=12">Performance tuning on LAMMPS for A64FX system</a></p></li>
+<li><p><a class="reference external" href="https://www.hpci-office.jp/documents/meeting_A64FX/220727/GROMACS_A64fx.pdf#page=17">Porting and optimizing GROMACS on Fugaku</a></p></li>
+</ul>
+</section>
+<section id="references">
+<h2><span class="section-number">3.2.4. </span>References<a class="headerlink" href="#references" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/en/manuals/tcsds-1.2.37/lang/Fortran/j2ul-2558-01enz0.pdf#page=265">Fortran User’s Guide “9.1.2.4 Loop Striping”</a></p></li>
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/en/manuals/tcsds-1.2.37/lang/C/j2ul-2560-01enz0.pdf#page=74">C User’s Guide “3.3.4 Loop Striping”</a></p></li>
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/en/manuals/tcsds-1.2.37/lang/C++/j2ul-2561-01enz0.pdf#page=77">C++ User’s Guide “3.3.4 Loop Striping”</a></p></li>
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/en/programming_guides/Programming_common_part_Programming_Guide.pdf#page=122">Programming Guide (Programming common part) “Loop Optimization and Instruction Scheduling”</a></p></li>
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/en/programming_guides/Fortran_Programming_Guide.pdf#page=44">Programming Guide (Fortran) “Loop Expansion”</a></p></li>
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/en/programming_guides/Fortran_Programming_Guide.pdf#page=52">Programming Guide (Fortran) “STRIPING”</a></p></li>
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/en/programming_guides/Tuning_Programming_Guide.pdf#page=194">Programming Guide (Tuning) “Specifying the Number of Striping (Interleaving) Expansions and Suppressing Software Pipelining”</a></p></li>
+</ul>
+<p>Notice: Access rights for
+<a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/en/">Fugaku User Portal</a>
+are required to read the above documents.</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">Table of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">1. Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simd.html">2. Promoting Vectorization</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="calcwait.html">3. Reduction of Waiting Time for Calculation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="calcwait-fission.html">3.1. Fission of Loop with Large Loop Body</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">3.2. Striping of Innermost Loop with Small Iteration Count</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="cachewait.html">4. Reduction of Waiting Time for Cache Access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="summary.html">5. Summary</a></li>
+</ul>
+
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="calcwait-fission.html"
+                          title="previous chapter"><span class="section-number">3.1. </span>Fission of Loop with Large Loop Body</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="cachewait.html"
+                          title="next chapter"><span class="section-number">4. </span>Reduction of Waiting Time for Cache Access</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="cachewait.html" title="4. Reduction of Waiting Time for Cache Access"
+             >next</a></li>
+        <li class="right" >
+          <a href="calcwait-fission.html" title="3.1. Fission of Loop with Large Loop Body"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Documentation of Tuning Techniques for A64FX Processors</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="calcwait.html" ><span class="section-number">3. </span>Reduction of Waiting Time for Calculation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">3.2. </span>Striping of Innermost Loop with Small Iteration Count</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2023, RIKEN Center for Computational Science.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

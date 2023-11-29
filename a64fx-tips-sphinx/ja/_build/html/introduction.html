@@ -1,0 +1,209 @@
+
+
+<!doctype html>
+
+<html lang="ja" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>1. はじめに &#8212; A64FX向けチューニングドキュメント整備</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="_static/bizstyle.css?v=532c1bf3" />
+    
+    <script src="_static/documentation_options.js?v=c033477b"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/translations.js?v=4dbe4bdc"></script>
+    <script src="_static/bizstyle.js"></script>
+    <link rel="search" title="検索" href="search.html" />
+    <link rel="next" title="2. SIMD化の促進" href="simd.html" />
+    <link rel="prev" title="A64FXプロセッサ向けチューニングtips集" href="index.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="simd.html" title="2. SIMD化の促進"
+             accesskey="N">次へ</a></li>
+        <li class="right" >
+          <a href="index.html" title="A64FXプロセッサ向けチューニングtips集"
+             accesskey="P">前へ</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">A64FX向けチューニングドキュメント整備</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">1. </span>はじめに</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1><span class="section-number">1. </span>はじめに<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<section id="id2">
+<h2><span class="section-number">1.1. </span>本ドキュメントの位置付け<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>本ドキュメントは
+<a class="reference external" href="https://www.hpci-office.jp/en/events/symposia/meetings_A64FX">A64FX向けチューニング技術検討会</a>
+で発表されたチューニング事例をもとに、他のアプリケーションプログラムにも共通して応用可能な施策を整理しまとめたものです。
+これらの施策は、以下に挙げる実用的なアプリケーションプログラムでの事例から抽出された実際的なものです。</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>アプリケーション分野</p></th>
+<th class="head"><p>プログラム名</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>電磁気</p></td>
+<td><p><a class="reference external" href="https://github.com/WumingCode/WumingPIC2D">WumingPIC2D</a></p></td>
+</tr>
+<tr class="row-odd"><td><p>流体力学</p></td>
+<td><p><a class="reference external" href="https://www.klab.mech.tohoku.ac.jp/fugaku/">FFVHC-ACE</a></p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><p><a class="reference external" href="https://www.jstage.jst.go.jp/article/seisankenkyu/70/1/70_43/_article">FrontFlow/X</a></p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td><p><a class="reference external" href="https://github.com/Nek5000">Nek5000/RS</a></p></td>
+</tr>
+<tr class="row-even"><td><p>分子動力学</p></td>
+<td><p><a class="reference external" href="https://www.r-ccs.riken.jp/labs/cbrt/">GENESIS</a></p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td><p><a class="reference external" href="https://www.gromacs.org/">GROMACS</a></p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><p><a class="reference external" href="https://www.lammps.org/">LAMMPS</a></p></td>
+</tr>
+<tr class="row-odd"><td><p>量子色力学</p></td>
+<td><p><a class="reference external" href="https://github.com/RIKEN-LQCD/qws">LQCD</a></p></td>
+</tr>
+<tr class="row-even"><td><p>気象、気候</p></td>
+<td><p><a class="reference external" href="https://scale.riken.jp/">SCALE</a></p></td>
+</tr>
+</tbody>
+</table>
+<p>なお施策の整理にあたっては、効果すなわち目的の観点も持ち込み、CPU性能解析レポートなどの性能プロファイラの結果から施策の候補を見出せるよう配慮しました。</p>
+</section>
+<section id="id3">
+<h2><span class="section-number">1.2. </span>本ドキュメントの構成<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>本ドキュメントで説明する8つの施策は、特に注力すべき以下の3種類の目的で分類されています。</p>
+<ol class="arabic simple">
+<li><p><a class="reference internal" href="simd.html"><span class="doc">SIMD化の促進</span></a></p></li>
+<li><p><a class="reference internal" href="calcwait.html"><span class="doc">演算待ち時間の削減</span></a></p></li>
+<li><p><a class="reference internal" href="cachewait.html"><span class="doc">キャッシュアクセス待ち時間の削減</span></a></p></li>
+</ol>
+<p>各施策の説明は、以下の内容で構成されています。</p>
+<ul class="simple">
+<li><p>施策のより具体的な動機</p></li>
+<li><p>性能改善の効果を示す適用例</p></li>
+<li><p>A64FXチューニング技術検討会で発表された実例への参照リンク</p></li>
+<li><p>言語製品マニュアルやプログラミングガイド等の関連情報への参照リンク</p></li>
+</ul>
+<p>性能プロファイラの結果が既に手元にある読者には、上記目的の中から対象アプリケーションプログラムに適合しそうなものに注目し、適用可能な施策の有無を確認することをお勧めします。</p>
+<p>なお各施策の説明では、A64FXチューニング技術検討会の講演資料やプログラミングガイド チューニング編などの関連情報への参照リンクも示されているため、必要に応じてより深い理解に繋げていただくことも可能です。</p>
+</section>
+<section id="id4">
+<h2><span class="section-number">1.3. </span>性能測定環境<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>本ドキュメントに掲載した性能データの測定環境は以下のとおりです。
+なおC/C++コンパイラはtradモードを使用しましたが、本ドキュメントで説明する施策の考え方はclangモードにも応用可能です。</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><th class="stub"><p>測定時期</p></th>
+<td><p>2023年11月</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p>使用マシン</p></th>
+<td><p>スーパーコンピュータ「富岳」</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p>言語環境バージョンレベル</p></th>
+<td><p>富士通Fortran/C/C++コンパイラ 4.9.0 (tcsds-1.2.37)</p></td>
+</tr>
+<tr class="row-even"><th class="stub"><p>翻訳時最適化オプション</p></th>
+<td><p>-Kfast,openmp,ocl</p></td>
+</tr>
+<tr class="row-odd"><th class="stub"><p>実行時プロセス数/スレッド数</p></th>
+<td><p>4プロセス、12スレッド</p></td>
+</tr>
+</tbody>
+</table>
+<p>また、各施策の説明で性能改善効果の確認に用いたCPU性能解析レポートの使用方法については、下記の言語製品マニュアル等を適宜参照してください。</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/ja/manuals/tcsds-1.2.37/lang/Tool/j2ul-2568-01z0.pdf#page=79">プロファイラ使用手引書 &quot;第4章 CPU性能解析レポート&quot;</a></p></li>
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/ja/programming_guides/Tuning_Programming_Guide_JA.pdf#page=6">プログラミングガイド チューニング編 &quot;ボトルネックの調査&quot;</a></p></li>
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/ja/programming_guides/Processors_Programming_Guide_JA.pdf#page=46">プログラミングガイド プロセッサ編 &quot;PMUイベント&quot;</a></p></li>
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/ja/programming_guides/app-tuning-pattern-Nihongo.pdf#page=23">アプリケーションのタイプ別CPU性能チューニング &quot;5.1 CPU性能解析レポートの見方&quot;</a></p></li>
+</ul>
+<p>注意: 上記ドキュメントの参照には
+<a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/">スーパーコンピュータ「富岳」利用者ポータル</a>
+のアクセス権が必要です。</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">目次</a></h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">1. はじめに</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#id2">1.1. 本ドキュメントの位置付け</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id3">1.2. 本ドキュメントの構成</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id4">1.3. 性能測定環境</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="simd.html">2. SIMD化の促進</a></li>
+<li class="toctree-l1"><a class="reference internal" href="calcwait.html">3. 演算待ち時間の削減</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cachewait.html">4. キャッシュアクセス待ち時間の削減</a></li>
+<li class="toctree-l1"><a class="reference internal" href="summary.html">5. まとめ</a></li>
+</ul>
+
+  <div>
+    <h4>前のトピックへ</h4>
+    <p class="topless"><a href="index.html"
+                          title="前の章へ">A64FXプロセッサ向けチューニングtips集</a></p>
+  </div>
+  <div>
+    <h4>次のトピックへ</h4>
+    <p class="topless"><a href="simd.html"
+                          title="次の章へ"><span class="section-number">2. </span>SIMD化の促進</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">クイック検索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="検索" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="simd.html" title="2. SIMD化の促進"
+             >次へ</a></li>
+        <li class="right" >
+          <a href="index.html" title="A64FXプロセッサ向けチューニングtips集"
+             >前へ</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">A64FX向けチューニングドキュメント整備</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">1. </span>はじめに</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; 著作権 2023, 理化学研究所 計算科学研究センター.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

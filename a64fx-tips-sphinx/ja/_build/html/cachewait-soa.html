@@ -1,0 +1,256 @@
+
+
+<!doctype html>
+
+<html lang="ja" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>4.2. AoS型多次元配列の次元入れ替え &#8212; A64FX向けチューニングドキュメント整備</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="_static/bizstyle.css?v=532c1bf3" />
+    
+    <script src="_static/documentation_options.js?v=c033477b"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/translations.js?v=4dbe4bdc"></script>
+    <script src="_static/bizstyle.js"></script>
+    <link rel="search" title="検索" href="search.html" />
+    <link rel="next" title="4.3. 配列ポインタへのcontiguous属性追加" href="cachewait-contiguous.html" />
+    <link rel="prev" title="4.1. 非連続アクセス最内ループのフルアンローリング" href="cachewait-unroll.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="cachewait-contiguous.html" title="4.3. 配列ポインタへのcontiguous属性追加"
+             accesskey="N">次へ</a></li>
+        <li class="right" >
+          <a href="cachewait-unroll.html" title="4.1. 非連続アクセス最内ループのフルアンローリング"
+             accesskey="P">前へ</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">A64FX向けチューニングドキュメント整備</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="cachewait.html" accesskey="U"><span class="section-number">4. </span>キャッシュアクセス待ち時間の削減</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.2. </span>AoS型多次元配列の次元入れ替え</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="aos">
+<h1><span class="section-number">4.2. </span>AoS型多次元配列の次元入れ替え<a class="headerlink" href="#aos" title="Link to this heading">¶</a></h1>
+<section id="id1">
+<h2><span class="section-number">4.2.1. </span>動機<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>Array of Structures (AoS)は例えば以下のように、構造体(C言語の場合)を並べて配列の形にしたデータレイアウトです。</p>
+<div class="literal-block-wrapper docutils container" id="id5">
+<div class="code-block-caption"><span class="caption-text">AoS配列の宣言(C言語の場合)</span><a class="headerlink" href="#id5" title="Link to this code">¶</a></div>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">Particle</span><span class="w"> </span><span class="p">{</span><span class="kt">double</span><span class="w"> </span><span class="n">x</span><span class="p">;</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">y</span><span class="p">;</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">z</span><span class="p">;};</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">Particle</span><span class="w"> </span><span class="n">particles</span><span class="p">[</span><span class="n">N</span><span class="p">];</span>
+</pre></div>
+</div>
+</div>
+<figure class="align-default" id="id6">
+<a class="reference internal image-reference" href="_images/cachewait-aos.png"><img alt="_images/cachewait-aos.png" src="_images/cachewait-aos.png" style="width: 608.2px; height: 116.80000000000001px;" /></a>
+<figcaption>
+<p><span class="caption-text">AoS配列のメモリ格納順序</span><a class="headerlink" href="#id6" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>このデータ構造は多次元配列を用いて以下のようにも表現できます。</p>
+<div class="literal-block-wrapper docutils container" id="id7">
+<div class="code-block-caption"><span class="caption-text">AoS型2次元配列の宣言(Fortran言語の場合)</span><a class="headerlink" href="#id7" title="Link to this code">¶</a></div>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="kt">real</span><span class="p">,</span><span class="w"> </span><span class="k">dimension</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="n">N</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">particles_aos</span>
+</pre></div>
+</div>
+</div>
+<figure class="align-default" id="id8">
+<a class="reference internal image-reference" href="_images/cachewait-2d-aos.png"><img alt="_images/cachewait-2d-aos.png" src="_images/cachewait-2d-aos.png" style="width: 611.2px; height: 127.4px;" /></a>
+<figcaption>
+<p><span class="caption-text">AoS型2次元配列のメモリ格納順序</span><a class="headerlink" href="#id8" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>ところで、この例でNが3よりも十分大きい場合、大きさNの次元に対応するループをSIMD化するほうがコンパイラによる最適化が促進され、実行性能面で有利と期待されます。
+しかしこの多次元配列は大きさNの次元が1次元目(Fortran言語の場合)でないため、
+<a class="reference internal" href="cachewait-unroll.html"><span class="doc">先の例</span></a>
+と同様に配列アクセスが非連続的になり、プロセッサのキャッシュアクセス負荷が高くなります。</p>
+<p>そこで、この多次元配列の1次元目と2次元目を入れ替え、以下のようなStructure of Arrays (SoA)のデータレイアウトとすることによって、大きさNの次元に対応するループを
+<strong>SIMD化した場合のキャッシュアクセス負荷を軽減</strong>
+できます。</p>
+<div class="literal-block-wrapper docutils container" id="id9">
+<div class="code-block-caption"><span class="caption-text">SoA型2次元配列の宣言(Fortran言語の場合)</span><a class="headerlink" href="#id9" title="Link to this code">¶</a></div>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="kt">real</span><span class="p">,</span><span class="w"> </span><span class="k">dimension</span><span class="p">(</span><span class="n">N</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">particles_soa</span>
+</pre></div>
+</div>
+</div>
+<figure class="align-default" id="id10">
+<a class="reference internal image-reference" href="_images/cachewait-2d-soa.png"><img alt="_images/cachewait-2d-soa.png" src="_images/cachewait-2d-soa.png" style="width: 286.40000000000003px; height: 358.6px;" /></a>
+<figcaption>
+<p><span class="caption-text">SoA型2次元配列のメモリ格納順序</span><a class="headerlink" href="#id10" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>その結果、プロセッサのキャッシュアクセス負荷を抑えつつ、コンパイラによる最適化を促進させて、実行時間を短縮できる可能性があります。</p>
+</section>
+<section id="id2">
+<h2><span class="section-number">4.2.2. </span>適用例<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p><a class="reference external" href="https://www.hpci-office.jp/en/events/symposia/meetings_A64FX">A64FX向けチューニング技術検討会</a>
+で示されたコード例を用いて、性能改善の例を以下に示します。
+この例では、一時配列x、y、zおよびmを導入し、変数jのforループにおいてAoS型配列bodyに対する非連続的なアクセスを一時配列に対する連続的なアクセスに置き換えています。</p>
+<div class="literal-block-wrapper docutils container" id="id11">
+<div class="code-block-caption"><span class="caption-text">改善前</span><a class="headerlink" href="#id11" title="Link to this code">¶</a></div>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">  </span><span class="k">for</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">&lt;</span><span class="n">n</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">){</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">xi</span><span class="o">=</span><span class="n">body</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">yi</span><span class="o">=</span><span class="n">body</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">zi</span><span class="o">=</span><span class="n">body</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">z</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">ax</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">ay</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">az</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="k">for</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">j</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="o">&lt;</span><span class="n">n</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="o">++</span><span class="p">){</span>
+<span class="w">      </span><span class="kt">float</span><span class="w"> </span><span class="n">dx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">xi</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">body</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">x</span><span class="p">;</span>
+<span class="w">      </span><span class="kt">float</span><span class="w"> </span><span class="n">dy</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">yi</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">body</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">y</span><span class="p">;</span>
+<span class="w">      </span><span class="kt">float</span><span class="w"> </span><span class="n">dz</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">zi</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">body</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">z</span><span class="p">;</span>
+<span class="w">      </span><span class="kt">float</span><span class="w"> </span><span class="n">r2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">eps2</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">dx</span><span class="o">*</span><span class="n">dx</span><span class="p">;</span>
+<span class="w">      </span><span class="n">r2</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">dy</span><span class="o">*</span><span class="n">dy</span><span class="p">;</span>
+<span class="w">      </span><span class="n">r2</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">dz</span><span class="o">*</span><span class="n">dz</span><span class="p">;</span>
+<span class="w">      </span><span class="kt">float</span><span class="w"> </span><span class="n">ri</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.f</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">sqrtf</span><span class="p">(</span><span class="n">r2</span><span class="p">);</span>
+<span class="w">      </span><span class="kt">float</span><span class="w"> </span><span class="n">mri</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">body</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">m</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">ri</span><span class="p">;</span>
+<span class="w">      </span><span class="kt">float</span><span class="w"> </span><span class="n">ri2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ri</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">ri</span><span class="p">;</span>
+<span class="w">      </span><span class="kt">float</span><span class="w"> </span><span class="n">mri3</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mri</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">ri2</span><span class="p">;</span>
+<span class="w">      </span><span class="n">ax</span><span class="w"> </span><span class="o">-=</span><span class="w"> </span><span class="n">mri3</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">dx</span><span class="p">;</span>
+<span class="w">      </span><span class="n">ay</span><span class="w"> </span><span class="o">-=</span><span class="w"> </span><span class="n">mri3</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">dy</span><span class="p">;</span>
+<span class="w">      </span><span class="n">az</span><span class="w"> </span><span class="o">-=</span><span class="w"> </span><span class="n">mri3</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">dz</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">acc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">ax</span><span class="p">,</span><span class="w"> </span><span class="n">ay</span><span class="p">,</span><span class="w"> </span><span class="n">az</span><span class="p">};</span>
+<span class="w">  </span><span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="literal-block-wrapper docutils container" id="id12">
+<div class="code-block-caption"><span class="caption-text">改善後</span><a class="headerlink" href="#id12" title="Link to this code">¶</a></div>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="hll"><span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">x</span><span class="p">[</span><span class="n">n</span><span class="p">],</span><span class="w"> </span><span class="n">y</span><span class="p">[</span><span class="n">n</span><span class="p">],</span><span class="w"> </span><span class="n">z</span><span class="p">[</span><span class="n">n</span><span class="p">],</span><span class="w"> </span><span class="n">m</span><span class="p">[</span><span class="n">n</span><span class="p">];</span>
+</span><span class="cp">#pragma loop norecurrence</span>
+<span class="hll"><span class="w">  </span><span class="k">for</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">&lt;</span><span class="n">n</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">){</span>
+</span><span class="hll"><span class="w">    </span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">body</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">x</span><span class="p">;</span>
+</span><span class="hll"><span class="w">    </span><span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">body</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">y</span><span class="p">;</span>
+</span><span class="hll"><span class="w">    </span><span class="n">z</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">body</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">z</span><span class="p">;</span>
+</span><span class="hll"><span class="w">    </span><span class="n">m</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">body</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">m</span><span class="p">;</span>
+</span><span class="hll"><span class="w">  </span><span class="p">}</span>
+</span><span class="w">  </span><span class="k">for</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">&lt;</span><span class="n">n</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">){</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">xi</span><span class="o">=</span><span class="n">body</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">yi</span><span class="o">=</span><span class="n">body</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">zi</span><span class="o">=</span><span class="n">body</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">z</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">ax</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">ay</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">az</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="k">for</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">j</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="o">&lt;</span><span class="n">n</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="o">++</span><span class="p">){</span>
+<span class="hll"><span class="w">      </span><span class="kt">float</span><span class="w"> </span><span class="n">dx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">xi</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">x</span><span class="p">[</span><span class="n">j</span><span class="p">];</span>
+</span><span class="hll"><span class="w">      </span><span class="kt">float</span><span class="w"> </span><span class="n">dy</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">yi</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">y</span><span class="p">[</span><span class="n">j</span><span class="p">];</span>
+</span><span class="hll"><span class="w">      </span><span class="kt">float</span><span class="w"> </span><span class="n">dz</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">zi</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">z</span><span class="p">[</span><span class="n">j</span><span class="p">];</span>
+</span><span class="w">      </span><span class="kt">float</span><span class="w"> </span><span class="n">r2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">eps2</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">dx</span><span class="o">*</span><span class="n">dx</span><span class="p">;</span>
+<span class="w">      </span><span class="n">r2</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">dy</span><span class="o">*</span><span class="n">dy</span><span class="p">;</span>
+<span class="w">      </span><span class="n">r2</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">dz</span><span class="o">*</span><span class="n">dz</span><span class="p">;</span>
+<span class="w">      </span><span class="kt">float</span><span class="w"> </span><span class="n">ri</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.f</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">sqrtf</span><span class="p">(</span><span class="n">r2</span><span class="p">);</span>
+<span class="hll"><span class="w">      </span><span class="kt">float</span><span class="w"> </span><span class="n">mri</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">m</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">ri</span><span class="p">;</span>
+</span><span class="w">      </span><span class="kt">float</span><span class="w"> </span><span class="n">ri2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ri</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">ri</span><span class="p">;</span>
+<span class="w">      </span><span class="kt">float</span><span class="w"> </span><span class="n">mri3</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mri</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">ri2</span><span class="p">;</span>
+<span class="w">      </span><span class="n">ax</span><span class="w"> </span><span class="o">-=</span><span class="w"> </span><span class="n">mri3</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">dx</span><span class="p">;</span>
+<span class="w">      </span><span class="n">ay</span><span class="w"> </span><span class="o">-=</span><span class="w"> </span><span class="n">mri3</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">dy</span><span class="p">;</span>
+<span class="w">      </span><span class="n">az</span><span class="w"> </span><span class="o">-=</span><span class="w"> </span><span class="n">mri3</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">dz</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">acc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">ax</span><span class="p">,</span><span class="w"> </span><span class="n">ay</span><span class="p">,</span><span class="w"> </span><span class="n">az</span><span class="p">};</span>
+<span class="w">  </span><span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<p>改善前および改善後コードのサイクルアカウンティング測定結果を下記グラフに示します。
+なお、性能測定条件は以下のとおりです。</p>
+<blockquote>
+<div><p>n = 2048</p>
+</div></blockquote>
+<p>改善前(左のグラフ)に対して改善後(右のグラフ)の測定結果では、L1Dキャッシュビジー時間が大幅減少し、実行時間が34%減ったことが分かります。
+なおこの例では、配列アクセスの結果に依存し連鎖する演算が多く含まれるために、キャッシュアクセス待ち時間よりも浮動小数点演算待ち時間が顕在化していると考えられます。</p>
+<a class="reference internal image-reference" href="_images/nbody.29503716.0.png"><img alt="_images/nbody.29503716.0.png" src="_images/nbody.29503716.0.png" style="width: 49%;" /></a>
+<a class="reference internal image-reference" href="_images/nbody.29503716.2.png"><img alt="_images/nbody.29503716.2.png" src="_images/nbody.29503716.2.png" style="width: 49%;" /></a>
+</section>
+<section id="id3">
+<h2><span class="section-number">4.2.3. </span>実例<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p><a class="reference external" href="https://www.hpci-office.jp/en/events/symposia/meetings_A64FX">A64FX向けチューニング技術検討会</a>
+にて、この種の事例が以下のとおり紹介されています。</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.hpci-office.jp/documents/meeting_A64FX/201223/20201223_Kobayashi_Tuning.pdf#page=12">Optimization of GENESIS on Fugaku</a></p></li>
+<li><p><a class="reference external" href="https://www.hpci-office.jp/documents/meeting_A64FX/220428/rist-a64fx-nbody.pdf#page=15">Performance tuning of N-body kernel for A64FX processor</a></p></li>
+</ul>
+</section>
+<section id="id4">
+<h2><span class="section-number">4.2.4. </span>参考資料<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/ja/programming_guides/Tuning_Programming_Guide_JA.pdf#page=244">プログラミングガイド チューニング編 &quot;Multiple Structures命令の適用条件&quot;</a></p></li>
+</ul>
+<p>注意: 上記ドキュメントの参照には
+<a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/">スーパーコンピュータ「富岳」利用者ポータル</a>
+のアクセス権が必要です。</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">目次</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">1. はじめに</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simd.html">2. SIMD化の促進</a></li>
+<li class="toctree-l1"><a class="reference internal" href="calcwait.html">3. 演算待ち時間の削減</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="cachewait.html">4. キャッシュアクセス待ち時間の削減</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="cachewait-unroll.html">4.1. 非連続アクセス最内ループのフルアンローリング</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">4.2. AoS型多次元配列の次元入れ替え</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cachewait-contiguous.html">4.3. 配列ポインタへのcontiguous属性追加</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="summary.html">5. まとめ</a></li>
+</ul>
+
+  <div>
+    <h4>前のトピックへ</h4>
+    <p class="topless"><a href="cachewait-unroll.html"
+                          title="前の章へ"><span class="section-number">4.1. </span>非連続アクセス最内ループのフルアンローリング</a></p>
+  </div>
+  <div>
+    <h4>次のトピックへ</h4>
+    <p class="topless"><a href="cachewait-contiguous.html"
+                          title="次の章へ"><span class="section-number">4.3. </span>配列ポインタへのcontiguous属性追加</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">クイック検索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="検索" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="cachewait-contiguous.html" title="4.3. 配列ポインタへのcontiguous属性追加"
+             >次へ</a></li>
+        <li class="right" >
+          <a href="cachewait-unroll.html" title="4.1. 非連続アクセス最内ループのフルアンローリング"
+             >前へ</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">A64FX向けチューニングドキュメント整備</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="cachewait.html" ><span class="section-number">4. </span>キャッシュアクセス待ち時間の削減</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.2. </span>AoS型多次元配列の次元入れ替え</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; 著作権 2023, 理化学研究所 計算科学研究センター.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,125 @@
+
+
+<!doctype html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>4. Reduction of Waiting Time for Cache Access &#8212; Documentation of Tuning Techniques for A64FX Processors</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="_static/bizstyle.css?v=532c1bf3" />
+    
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/bizstyle.js"></script>
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="4.1. Full-Unrolling of Innermost Loop with Non-Contiguous Data Access" href="cachewait-unroll.html" />
+    <link rel="prev" title="3.2. Striping of Innermost Loop with Small Iteration Count" href="calcwait-striping.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="cachewait-unroll.html" title="4.1. Full-Unrolling of Innermost Loop with Non-Contiguous Data Access"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="calcwait-striping.html" title="3.2. Striping of Innermost Loop with Small Iteration Count"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Documentation of Tuning Techniques for A64FX Processors</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4. </span>Reduction of Waiting Time for Cache Access</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="reduction-of-waiting-time-for-cache-access">
+<h1><span class="section-number">4. </span>Reduction of Waiting Time for Cache Access<a class="headerlink" href="#reduction-of-waiting-time-for-cache-access" title="Link to this heading">¶</a></h1>
+<p>When CPU performance analysis reports show higher ratio of waiting time for L1D cache access on cycle accounting, there might be room to reconsider data access pattern of the source program.
+Effective techniques for such cases are explained in this section.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="cachewait-unroll.html">4.1. Full-Unrolling of Innermost Loop with Non-Contiguous Data Access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cachewait-soa.html">4.2. Interchange of Array Dimension for AoS Layout</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cachewait-contiguous.html">4.3. Specifying CONTIGUOUS Attribute to Array Pointer</a></li>
+</ul>
+</div>
+<p>On cycle accounting, waiting time for calculation and cache access is distinguished for each CPU cycle by execution status of the oldest in-flight CPU instruction in the program order.
+Therefore, techniques for
+<a class="reference internal" href="calcwait.html"><span class="doc">Reduction of Waiting Time for Calculation</span></a>
+might reduce waiting time for cache access together as a result, for example in case of a program where there are many non-contiguous array references within a loop.</p>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">Table of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">1. Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simd.html">2. Promoting Vectorization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="calcwait.html">3. Reduction of Waiting Time for Calculation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">4. Reduction of Waiting Time for Cache Access</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="cachewait-unroll.html">4.1. Full-Unrolling of Innermost Loop with Non-Contiguous Data Access</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cachewait-soa.html">4.2. Interchange of Array Dimension for AoS Layout</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cachewait-contiguous.html">4.3. Specifying CONTIGUOUS Attribute to Array Pointer</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="summary.html">5. Summary</a></li>
+</ul>
+
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="calcwait-striping.html"
+                          title="previous chapter"><span class="section-number">3.2. </span>Striping of Innermost Loop with Small Iteration Count</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="cachewait-unroll.html"
+                          title="next chapter"><span class="section-number">4.1. </span>Full-Unrolling of Innermost Loop with Non-Contiguous Data Access</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="cachewait-unroll.html" title="4.1. Full-Unrolling of Innermost Loop with Non-Contiguous Data Access"
+             >next</a></li>
+        <li class="right" >
+          <a href="calcwait-striping.html" title="3.2. Striping of Innermost Loop with Small Iteration Count"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Documentation of Tuning Techniques for A64FX Processors</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4. </span>Reduction of Waiting Time for Cache Access</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2023, RIKEN Center for Computational Science.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,263 @@
+
+
+<!doctype html>
+
+<html lang="ja" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>3.1. 巨大ループのループ分割 &#8212; A64FX向けチューニングドキュメント整備</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="_static/bizstyle.css?v=532c1bf3" />
+    
+    <script src="_static/documentation_options.js?v=c033477b"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/translations.js?v=4dbe4bdc"></script>
+    <script src="_static/bizstyle.js"></script>
+    <link rel="search" title="検索" href="search.html" />
+    <link rel="next" title="3.2. 少回転最内ループのループストライピング" href="calcwait-striping.html" />
+    <link rel="prev" title="3. 演算待ち時間の削減" href="calcwait.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="calcwait-striping.html" title="3.2. 少回転最内ループのループストライピング"
+             accesskey="N">次へ</a></li>
+        <li class="right" >
+          <a href="calcwait.html" title="3. 演算待ち時間の削減"
+             accesskey="P">前へ</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">A64FX向けチューニングドキュメント整備</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="calcwait.html" accesskey="U"><span class="section-number">3. </span>演算待ち時間の削減</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">3.1. </span>巨大ループのループ分割</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1><span class="section-number">3.1. </span>巨大ループのループ分割<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<section id="id2">
+<h2><span class="section-number">3.1.1. </span>動機<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>富士通Fortran/C/C++コンパイラはA64FXプロセッサの性能を引き出すために、ソフトウェアパイプライニングの最適化を活用します。
+ただし、ソフトウェアパイプライニングはA64FXプロセッサの各種レジスタを通常よりも多く使用するため、対象ループのループボディが大きい場合、レジスタ不足によって本最適化を適用できない場合があります。</p>
+<p>そこで、ソースプログラムにloop_fission_targetの最適化制御行(OCL)を挿入することによって、
+<strong>巨大なループの自動分割をコンパイラに指示</strong>
+できるケースがあります。</p>
+<p>その結果、ソースプログラム上では大きなループが複数の小さなループとしてコンパイラで扱われることにより、ソフトウェアパイプライニングやレジスタ割り当ての最適化が促進されて、実行時間を短縮できる可能性があります。</p>
+</section>
+<section id="id3">
+<h2><span class="section-number">3.1.2. </span>適用例<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p><a class="reference external" href="https://www.hpci-office.jp/en/events/symposia/meetings_A64FX">A64FX向けチューニング技術検討会</a>
+で示されたコード例を用いて、性能改善の例を以下に示します。
+この例では、ループボディが大きいdo変数iiのループに対して、loop_fission_targetの最適化制御行を適用しています。</p>
+<div class="literal-block-wrapper docutils container" id="id6">
+<div class="code-block-caption"><span class="caption-text">改善前</span><a class="headerlink" href="#id6" title="Link to this code">¶</a></div>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="w">  </span><span class="k">do </span><span class="n">ii</span><span class="o">=</span><span class="n">cumcnt</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">isp</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">cumcnt</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">j</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">isp</span><span class="p">)</span>
+<span class="w">     </span><span class="n">dh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">up</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">ii</span><span class="p">,</span><span class="n">j</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">isp</span><span class="p">)</span><span class="o">*</span><span class="n">idelx</span><span class="o">-</span><span class="mf">0.5</span><span class="o">-</span><span class="n">i</span>
+<span class="w">     </span><span class="n">s0x</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.D0</span>
+<span class="w">     </span><span class="n">s0x</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="mf">0.5</span><span class="o">-</span><span class="n">dh</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mf">0.5</span><span class="o">-</span><span class="n">dh</span><span class="p">)</span>
+<span class="w">     </span><span class="n">s0x</span><span class="p">(</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.75</span><span class="o">-</span><span class="n">dh</span><span class="o">*</span><span class="n">dh</span>
+<span class="w">     </span><span class="n">s0x</span><span class="p">(</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="mf">0.5</span><span class="o">+</span><span class="n">dh</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mf">0.5</span><span class="o">+</span><span class="n">dh</span><span class="p">)</span>
+<span class="w">     </span><span class="n">s0x</span><span class="p">(</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.D0</span>
+<span class="w">     </span><span class="n">dh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">up</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="n">ii</span><span class="p">,</span><span class="n">j</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">isp</span><span class="p">)</span><span class="o">*</span><span class="n">idelx</span><span class="o">-</span><span class="mf">0.5</span><span class="o">-</span><span class="n">j</span>
+<span class="w">     </span><span class="n">s0y</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.D0</span>
+<span class="w">     </span><span class="n">s0y</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="mf">0.5</span><span class="o">-</span><span class="n">dh</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mf">0.5</span><span class="o">-</span><span class="n">dh</span><span class="p">)</span>
+<span class="w">     </span><span class="n">s0y</span><span class="p">(</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.75</span><span class="o">-</span><span class="n">dh</span><span class="o">*</span><span class="n">dh</span>
+<span class="w">     </span><span class="n">s0y</span><span class="p">(</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="mf">0.5</span><span class="o">+</span><span class="n">dh</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mf">0.5</span><span class="o">+</span><span class="n">dh</span><span class="p">)</span>
+<span class="w">     </span><span class="n">s0y</span><span class="p">(</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.D0</span>
+<span class="w">     </span><span class="n">dh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">up</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="n">ii</span><span class="p">,</span><span class="n">j</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">isp</span><span class="p">)</span><span class="o">*</span><span class="n">idelx</span><span class="o">-</span><span class="mf">0.5</span><span class="o">-</span><span class="n">k</span>
+<span class="w">     </span><span class="n">s0z</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.D0</span>
+<span class="w">     </span><span class="n">s0z</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="mf">0.5</span><span class="o">-</span><span class="n">dh</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mf">0.5</span><span class="o">-</span><span class="n">dh</span><span class="p">)</span>
+<span class="w">     </span><span class="n">s0z</span><span class="p">(</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.75</span><span class="o">-</span><span class="n">dh</span><span class="o">*</span><span class="n">dh</span>
+<span class="w">     </span><span class="n">s0z</span><span class="p">(</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="mf">0.5</span><span class="o">+</span><span class="n">dh</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mf">0.5</span><span class="o">+</span><span class="n">dh</span><span class="p">)</span>
+<span class="w">     </span><span class="n">s0z</span><span class="p">(</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.D0</span>
+<span class="w">     </span><span class="n">i2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">int</span><span class="p">(</span><span class="n">gp</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">ii</span><span class="p">,</span><span class="n">j</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">isp</span><span class="p">)</span><span class="o">*</span><span class="n">idelx</span><span class="p">)</span>
+<span class="w">     </span><span class="n">dh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gp</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">ii</span><span class="p">,</span><span class="n">j</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">isp</span><span class="p">)</span><span class="o">*</span><span class="n">idelx</span><span class="o">-</span><span class="mf">0.5</span><span class="o">-</span><span class="n">i2</span>
+<span class="w">     </span><span class="n">inc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">i2</span><span class="o">-</span><span class="n">i</span>
+<span class="w">     </span><span class="n">s1_1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="mf">0.5</span><span class="o">-</span><span class="n">dh</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mf">0.5</span><span class="o">-</span><span class="n">dh</span><span class="p">)</span>
+<span class="w">     </span><span class="n">s1_2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.75</span><span class="o">-</span><span class="n">dh</span><span class="o">*</span><span class="n">dh</span>
+<span class="w">     </span><span class="n">s1_3</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="mf">0.5</span><span class="o">+</span><span class="n">dh</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mf">0.5</span><span class="o">+</span><span class="n">dh</span><span class="p">)</span>
+<span class="w">     </span><span class="n">smo_1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="p">(</span><span class="n">inc</span><span class="o">-</span><span class="nb">abs</span><span class="p">(</span><span class="n">inc</span><span class="p">))</span><span class="o">*</span><span class="mf">0.5</span><span class="o">+</span><span class="mi">0</span>
+<span class="w">     </span><span class="n">smo_2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="nb">abs</span><span class="p">(</span><span class="n">inc</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span>
+<span class="w">     </span><span class="n">smo_3</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">inc</span><span class="o">+</span><span class="nb">abs</span><span class="p">(</span><span class="n">inc</span><span class="p">))</span><span class="o">*</span><span class="mf">0.5</span><span class="o">+</span><span class="mi">0</span>
+<span class="w">     </span><span class="n">dsx</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s1_1</span><span class="o">*</span><span class="n">smo_1</span>
+<span class="w">     </span><span class="n">dsx</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s1_1</span><span class="o">*</span><span class="n">smo_2</span><span class="o">+</span><span class="n">s1_2</span><span class="o">*</span><span class="n">smo_1</span>
+<span class="w">     </span><span class="n">dsx</span><span class="p">(</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s1_2</span><span class="o">*</span><span class="n">smo_2</span><span class="o">+</span><span class="n">s1_3</span><span class="o">*</span><span class="n">smo_1</span><span class="o">+</span><span class="n">s1_1</span><span class="o">*</span><span class="n">smo_3</span>
+<span class="w">     </span><span class="n">dsx</span><span class="p">(</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s1_3</span><span class="o">*</span><span class="n">smo_2</span><span class="o">+</span><span class="n">s1_2</span><span class="o">*</span><span class="n">smo_3</span>
+<span class="w">     </span><span class="n">dsx</span><span class="p">(</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s1_3</span><span class="o">*</span><span class="n">smo_3</span>
+<span class="w">     </span><span class="n">i2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">int</span><span class="p">(</span><span class="n">gp</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="n">ii</span><span class="p">,</span><span class="n">j</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">isp</span><span class="p">)</span><span class="o">*</span><span class="n">idelx</span><span class="p">)</span>
+<span class="w">     </span><span class="n">dh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gp</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="n">ii</span><span class="p">,</span><span class="n">j</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">isp</span><span class="p">)</span><span class="o">*</span><span class="n">idelx</span><span class="o">-</span><span class="mf">0.5</span><span class="o">-</span><span class="n">i2</span>
+<span class="w">     </span><span class="n">inc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">i2</span><span class="o">-</span><span class="n">j</span>
+<span class="w">     </span><span class="n">s1_1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="mf">0.5</span><span class="o">-</span><span class="n">dh</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mf">0.5</span><span class="o">-</span><span class="n">dh</span><span class="p">)</span>
+<span class="w">     </span><span class="n">s1_2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.75</span><span class="o">-</span><span class="n">dh</span><span class="o">*</span><span class="n">dh</span>
+<span class="w">     </span><span class="n">s1_3</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="mf">0.5</span><span class="o">+</span><span class="n">dh</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mf">0.5</span><span class="o">+</span><span class="n">dh</span><span class="p">)</span>
+<span class="w">     </span><span class="n">smo_1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="p">(</span><span class="n">inc</span><span class="o">-</span><span class="nb">abs</span><span class="p">(</span><span class="n">inc</span><span class="p">))</span><span class="o">*</span><span class="mf">0.5</span><span class="o">+</span><span class="mi">0</span>
+<span class="w">     </span><span class="n">smo_2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="nb">abs</span><span class="p">(</span><span class="n">inc</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span>
+<span class="w">     </span><span class="n">smo_3</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">inc</span><span class="o">+</span><span class="nb">abs</span><span class="p">(</span><span class="n">inc</span><span class="p">))</span><span class="o">*</span><span class="mf">0.5</span><span class="o">+</span><span class="mi">0</span>
+<span class="w">     </span><span class="n">dsy</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s1_1</span><span class="o">*</span><span class="n">smo_1</span>
+<span class="w">     </span><span class="n">dsy</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s1_1</span><span class="o">*</span><span class="n">smo_2</span><span class="o">+</span><span class="n">s1_2</span><span class="o">*</span><span class="n">smo_1</span>
+<span class="w">     </span><span class="n">dsy</span><span class="p">(</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s1_2</span><span class="o">*</span><span class="n">smo_2</span><span class="o">+</span><span class="n">s1_3</span><span class="o">*</span><span class="n">smo_1</span><span class="o">+</span><span class="n">s1_1</span><span class="o">*</span><span class="n">smo_3</span>
+<span class="w">     </span><span class="n">dsy</span><span class="p">(</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s1_3</span><span class="o">*</span><span class="n">smo_2</span><span class="o">+</span><span class="n">s1_2</span><span class="o">*</span><span class="n">smo_3</span>
+<span class="w">     </span><span class="n">dsy</span><span class="p">(</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s1_3</span><span class="o">*</span><span class="n">smo_3</span>
+<span class="w">     </span><span class="n">i2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">int</span><span class="p">(</span><span class="n">gp</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="n">ii</span><span class="p">,</span><span class="n">j</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">isp</span><span class="p">)</span><span class="o">*</span><span class="n">idelx</span><span class="p">)</span>
+<span class="w">     </span><span class="n">dh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gp</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="n">ii</span><span class="p">,</span><span class="n">j</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">isp</span><span class="p">)</span><span class="o">*</span><span class="n">idelx</span><span class="o">-</span><span class="mf">0.5</span><span class="o">-</span><span class="n">i2</span>
+<span class="w">     </span><span class="n">inc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">i2</span><span class="o">-</span><span class="n">k</span>
+<span class="w">     </span><span class="n">s1_1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="mf">0.5</span><span class="o">-</span><span class="n">dh</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mf">0.5</span><span class="o">-</span><span class="n">dh</span><span class="p">)</span>
+<span class="w">     </span><span class="n">s1_2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.75</span><span class="o">-</span><span class="n">dh</span><span class="o">*</span><span class="n">dh</span>
+<span class="w">     </span><span class="n">s1_3</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="mf">0.5</span><span class="o">+</span><span class="n">dh</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mf">0.5</span><span class="o">+</span><span class="n">dh</span><span class="p">)</span>
+<span class="w">     </span><span class="n">smo_1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="p">(</span><span class="n">inc</span><span class="o">-</span><span class="nb">abs</span><span class="p">(</span><span class="n">inc</span><span class="p">))</span><span class="o">*</span><span class="mf">0.5</span><span class="o">+</span><span class="mi">0</span>
+<span class="w">     </span><span class="n">smo_2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="nb">abs</span><span class="p">(</span><span class="n">inc</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span>
+<span class="w">     </span><span class="n">smo_3</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">inc</span><span class="o">+</span><span class="nb">abs</span><span class="p">(</span><span class="n">inc</span><span class="p">))</span><span class="o">*</span><span class="mf">0.5</span><span class="o">+</span><span class="mi">0</span>
+<span class="w">     </span><span class="n">dsz</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s1_1</span><span class="o">*</span><span class="n">smo_1</span>
+<span class="w">     </span><span class="n">dsz</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s1_1</span><span class="o">*</span><span class="n">smo_2</span><span class="o">+</span><span class="n">s1_2</span><span class="o">*</span><span class="n">smo_1</span>
+<span class="w">     </span><span class="n">dsz</span><span class="p">(</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s1_2</span><span class="o">*</span><span class="n">smo_2</span><span class="o">+</span><span class="n">s1_3</span><span class="o">*</span><span class="n">smo_1</span><span class="o">+</span><span class="n">s1_1</span><span class="o">*</span><span class="n">smo_3</span>
+<span class="w">     </span><span class="n">dsz</span><span class="p">(</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s1_3</span><span class="o">*</span><span class="n">smo_2</span><span class="o">+</span><span class="n">s1_2</span><span class="o">*</span><span class="n">smo_3</span>
+<span class="w">     </span><span class="n">dsz</span><span class="p">(</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s1_3</span><span class="o">*</span><span class="n">smo_3</span>
+<span class="w">     </span><span class="n">dsx</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">:</span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dsx</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">:</span><span class="mi">2</span><span class="p">)</span><span class="o">-</span><span class="n">s0x</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">:</span><span class="mi">2</span><span class="p">)</span>
+<span class="w">     </span><span class="n">dsy</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">:</span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dsy</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">:</span><span class="mi">2</span><span class="p">)</span><span class="o">-</span><span class="n">s0y</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">:</span><span class="mi">2</span><span class="p">)</span>
+<span class="w">     </span><span class="n">dsz</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">:</span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dsz</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">:</span><span class="mi">2</span><span class="p">)</span><span class="o">-</span><span class="n">s0z</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">:</span><span class="mi">2</span><span class="p">)</span>
+<span class="c">!OCL UNROLL(&#39;FULL&#39;)</span>
+<span class="w">     </span><span class="k">do </span><span class="n">kp</span><span class="o">=-</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span>
+<span class="w">        </span><span class="k">do </span><span class="n">jp</span><span class="o">=-</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span>
+<span class="w">           </span><span class="n">pjtmpx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.D0</span>
+<span class="w">           </span><span class="n">pjtmpy</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.D0</span>
+<span class="w">           </span><span class="n">pjtmpz</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.D0</span>
+<span class="w">           </span><span class="n">dstmpx</span><span class="w"> </span><span class="o">=</span><span class="w">  </span><span class="p">(</span><span class="n">s0y</span><span class="p">(</span><span class="n">jp</span><span class="p">)</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">dsy</span><span class="p">(</span><span class="n">jp</span><span class="p">))</span><span class="o">*</span><span class="n">s0z</span><span class="p">(</span><span class="n">kp</span><span class="p">)</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">                </span><span class="o">+</span><span class="p">(</span><span class="mf">0.5</span><span class="o">*</span><span class="n">s0y</span><span class="p">(</span><span class="n">jp</span><span class="p">)</span><span class="o">+</span><span class="n">fac</span><span class="o">*</span><span class="n">dsy</span><span class="p">(</span><span class="n">jp</span><span class="p">))</span><span class="o">*</span><span class="n">dsz</span><span class="p">(</span><span class="n">kp</span><span class="p">)</span>
+<span class="w">           </span><span class="n">dstmpy</span><span class="w"> </span><span class="o">=</span><span class="w">  </span><span class="p">(</span><span class="n">s0x</span><span class="p">(</span><span class="n">jp</span><span class="p">)</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">dsx</span><span class="p">(</span><span class="n">jp</span><span class="p">))</span><span class="o">*</span><span class="n">s0z</span><span class="p">(</span><span class="n">kp</span><span class="p">)</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">                </span><span class="o">+</span><span class="p">(</span><span class="mf">0.5</span><span class="o">*</span><span class="n">s0x</span><span class="p">(</span><span class="n">jp</span><span class="p">)</span><span class="o">+</span><span class="n">fac</span><span class="o">*</span><span class="n">dsx</span><span class="p">(</span><span class="n">jp</span><span class="p">))</span><span class="o">*</span><span class="n">dsz</span><span class="p">(</span><span class="n">kp</span><span class="p">)</span>
+<span class="w">           </span><span class="n">dstmpz</span><span class="w"> </span><span class="o">=</span><span class="w">  </span><span class="p">(</span><span class="n">s0x</span><span class="p">(</span><span class="n">jp</span><span class="p">)</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">dsx</span><span class="p">(</span><span class="n">jp</span><span class="p">))</span><span class="o">*</span><span class="n">s0y</span><span class="p">(</span><span class="n">kp</span><span class="p">)</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">                </span><span class="o">+</span><span class="p">(</span><span class="mf">0.5</span><span class="o">*</span><span class="n">s0x</span><span class="p">(</span><span class="n">jp</span><span class="p">)</span><span class="o">+</span><span class="n">fac</span><span class="o">*</span><span class="n">dsx</span><span class="p">(</span><span class="n">jp</span><span class="p">))</span><span class="o">*</span><span class="n">dsy</span><span class="p">(</span><span class="n">kp</span><span class="p">)</span>
+<span class="w">           </span><span class="k">do </span><span class="n">ip</span><span class="o">=-</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span>
+<span class="w">              </span><span class="n">pjtmpx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pjtmpx</span><span class="o">-</span><span class="n">q</span><span class="p">(</span><span class="n">isp</span><span class="p">)</span><span class="o">*</span><span class="n">delx</span><span class="o">*</span><span class="n">idelt</span><span class="o">*</span><span class="n">dsx</span><span class="p">(</span><span class="n">ip</span><span class="p">)</span><span class="o">*</span><span class="n">dstmpx</span>
+<span class="w">              </span><span class="n">pjtmpy</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pjtmpy</span><span class="o">-</span><span class="n">q</span><span class="p">(</span><span class="n">isp</span><span class="p">)</span><span class="o">*</span><span class="n">delx</span><span class="o">*</span><span class="n">idelt</span><span class="o">*</span><span class="n">dsy</span><span class="p">(</span><span class="n">ip</span><span class="p">)</span><span class="o">*</span><span class="n">dstmpy</span>
+<span class="w">              </span><span class="n">pjtmpz</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pjtmpz</span><span class="o">-</span><span class="n">q</span><span class="p">(</span><span class="n">isp</span><span class="p">)</span><span class="o">*</span><span class="n">delx</span><span class="o">*</span><span class="n">idelt</span><span class="o">*</span><span class="n">dsz</span><span class="p">(</span><span class="n">ip</span><span class="p">)</span><span class="o">*</span><span class="n">dstmpz</span>
+<span class="w">              </span><span class="n">pjx</span><span class="p">(</span><span class="n">ip</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">jp</span><span class="p">,</span><span class="n">kp</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pjx</span><span class="p">(</span><span class="n">ip</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">jp</span><span class="p">,</span><span class="n">kp</span><span class="p">)</span><span class="o">+</span><span class="n">pjtmpx</span>
+<span class="w">              </span><span class="n">pjy</span><span class="p">(</span><span class="n">ip</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">jp</span><span class="p">,</span><span class="n">kp</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pjy</span><span class="p">(</span><span class="n">ip</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">jp</span><span class="p">,</span><span class="n">kp</span><span class="p">)</span><span class="o">+</span><span class="n">pjtmpy</span>
+<span class="w">              </span><span class="n">pjz</span><span class="p">(</span><span class="n">ip</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">jp</span><span class="p">,</span><span class="n">kp</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pjz</span><span class="p">(</span><span class="n">ip</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">jp</span><span class="p">,</span><span class="n">kp</span><span class="p">)</span><span class="o">+</span><span class="n">pjtmpz</span>
+<span class="w">           </span><span class="k">enddo</span>
+<span class="k">        enddo</span>
+<span class="k">     enddo</span>
+<span class="k">  enddo</span>
+</pre></div>
+</div>
+</div>
+<div class="literal-block-wrapper docutils container" id="id7">
+<div class="code-block-caption"><span class="caption-text">改善後</span><a class="headerlink" href="#id7" title="Link to this code">¶</a></div>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="hll"><span class="c">!OCL LOOP_FISSION_TARGET(LS)</span>
+</span><span class="w">  </span><span class="k">do </span><span class="n">ii</span><span class="o">=</span><span class="n">cumcnt</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">isp</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">cumcnt</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">j</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">isp</span><span class="p">)</span>
+<span class="w">     </span><span class="p">...</span>
+<span class="w">  </span><span class="k">enddo</span>
+</pre></div>
+</div>
+</div>
+<p>改善前および改善後コードのサイクルアカウンティング測定結果を下記グラフに示します。
+なお、性能測定条件は以下のとおりです。</p>
+<blockquote>
+<div><p>cumcnt(i+1,j,k,isp) - cumcnt(i,j,k,isp) = 20</p>
+</div></blockquote>
+<p>改善前(左のグラフ)に対して改善後(右のグラフ)の測定結果では、整数演算ビジー時間や整数演算待ち時間が大幅減少し、実行時間が44%減ったことが分かります。
+なおL1Dキャッシュビジー時間やL1Dキャッシュアクセス待ち時間の減少は、ループ分割によってプロセッサのレジスタスピル/フィル動作が減った効果と考えられます。</p>
+<a class="reference internal image-reference" href="_images/elecur.29503716.0.png"><img alt="_images/elecur.29503716.0.png" src="_images/elecur.29503716.0.png" style="width: 49%;" /></a>
+<a class="reference internal image-reference" href="_images/elecur.29503716.2.png"><img alt="_images/elecur.29503716.2.png" src="_images/elecur.29503716.2.png" style="width: 49%;" /></a>
+</section>
+<section id="id4">
+<h2><span class="section-number">3.1.3. </span>実例<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p><a class="reference external" href="https://www.hpci-office.jp/en/events/symposia/meetings_A64FX">A64FX向けチューニング技術検討会</a>
+にて、この種の事例が以下のとおり紹介されています。</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.hpci-office.jp/documents/meeting_A64FX/201223/LQCD_A64FX_20201223.pdf#page=17">LQCD tuning on Fugaku</a></p></li>
+<li><p><a class="reference external" href="https://www.hpci-office.jp/documents/meeting_A64FX/210427/lmp_tune_for_a64fx_27Apr2021_final.pdf#page=20">Performance tuning on LAMMPS for A64FX system</a></p></li>
+<li><p><a class="reference external" href="https://www.hpci-office.jp/documents/meeting_A64FX/210427/Tuning_of_FFVHC-ACE.pdf#page=15">CPU and Thread Parallelization Tuning of FFVHC-ACE on Fugaku</a></p></li>
+<li><p><a class="reference external" href="https://www.hpci-office.jp/documents/meeting_A64FX/220727/Examples_of_serial-code_opt_for_A64FX-RIST-20220725.pdf#page=8">Examples of serial-code optimization for A64FX processor cores</a></p></li>
+</ul>
+</section>
+<section id="id5">
+<h2><span class="section-number">3.1.4. </span>参考資料<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/ja/manuals/tcsds-1.2.37/lang/Fortran/j2ul-2558-01z0.pdf#page=269">Fortran使用手引書 &quot;9.1.2.11 ループ分割&quot;</a></p></li>
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/ja/manuals/tcsds-1.2.37/lang/C/j2ul-2560-01z0.pdf#page=77">C言語使用手引書 &quot;3.3.10 ループ分割&quot;</a></p></li>
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/ja/manuals/tcsds-1.2.37/lang/C++/j2ul-2561-01z0.pdf#page=80">C++言語使用手引書 &quot;3.3.10 ループ分割&quot;</a></p></li>
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/ja/programming_guides/Fortran_Programming_Guide_JA.pdf#page=54">プログラミングガイド Fortran編 &quot;LOOP_FISSION&quot;</a></p></li>
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/ja/programming_guides/app-tuning-pattern-Nihongo.pdf#page=23">アプリケーションのタイプ別CPU性能チューニング &quot;5.2 タイプ毎のチューニング技術(1)&quot;</a></p></li>
+</ul>
+<p>注意: 上記ドキュメントの参照には
+<a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/">スーパーコンピュータ「富岳」利用者ポータル</a>
+のアクセス権が必要です。</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">目次</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">1. はじめに</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simd.html">2. SIMD化の促進</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="calcwait.html">3. 演算待ち時間の削減</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">3.1. 巨大ループのループ分割</a></li>
+<li class="toctree-l2"><a class="reference internal" href="calcwait-striping.html">3.2. 少回転最内ループのループストライピング</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="cachewait.html">4. キャッシュアクセス待ち時間の削減</a></li>
+<li class="toctree-l1"><a class="reference internal" href="summary.html">5. まとめ</a></li>
+</ul>
+
+  <div>
+    <h4>前のトピックへ</h4>
+    <p class="topless"><a href="calcwait.html"
+                          title="前の章へ"><span class="section-number">3. </span>演算待ち時間の削減</a></p>
+  </div>
+  <div>
+    <h4>次のトピックへ</h4>
+    <p class="topless"><a href="calcwait-striping.html"
+                          title="次の章へ"><span class="section-number">3.2. </span>少回転最内ループのループストライピング</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">クイック検索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="検索" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>ナビゲーション</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="calcwait-striping.html" title="3.2. 少回転最内ループのループストライピング"
+             >次へ</a></li>
+        <li class="right" >
+          <a href="calcwait.html" title="3. 演算待ち時間の削減"
+             >前へ</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">A64FX向けチューニングドキュメント整備</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="calcwait.html" ><span class="section-number">3. </span>演算待ち時間の削減</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">3.1. </span>巨大ループのループ分割</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; 著作権 2023, 理化学研究所 計算科学研究センター.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

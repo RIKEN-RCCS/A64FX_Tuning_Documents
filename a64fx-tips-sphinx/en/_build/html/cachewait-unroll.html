@@ -1,0 +1,198 @@
+
+
+<!doctype html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>4.1. Full-Unrolling of Innermost Loop with Non-Contiguous Data Access &#8212; Documentation of Tuning Techniques for A64FX Processors</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="_static/bizstyle.css?v=532c1bf3" />
+    
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/bizstyle.js"></script>
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="4.2. Interchange of Array Dimension for AoS Layout" href="cachewait-soa.html" />
+    <link rel="prev" title="4. Reduction of Waiting Time for Cache Access" href="cachewait.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="cachewait-soa.html" title="4.2. Interchange of Array Dimension for AoS Layout"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="cachewait.html" title="4. Reduction of Waiting Time for Cache Access"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Documentation of Tuning Techniques for A64FX Processors</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="cachewait.html" accesskey="U"><span class="section-number">4. </span>Reduction of Waiting Time for Cache Access</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.1. </span>Full-Unrolling of Innermost Loop with Non-Contiguous Data Access</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="full-unrolling-of-innermost-loop-with-non-contiguous-data-access">
+<h1><span class="section-number">4.1. </span>Full-Unrolling of Innermost Loop with Non-Contiguous Data Access<a class="headerlink" href="#full-unrolling-of-innermost-loop-with-non-contiguous-data-access" title="Link to this heading">¶</a></h1>
+<section id="motivation">
+<h2><span class="section-number">4.1.1. </span>Motivation<a class="headerlink" href="#motivation" title="Link to this heading">¶</a></h2>
+<p>Fujitsu Fortran/C/C++ compilers vectorize innermost loops.
+Therefore, if an index of the first dimension (for Fortran programs) for an array reference within an innermost loop is not the do-variable for the innermost loop, the array accesses are not contiguous and lead to more busy time for cache access.</p>
+<p>However, when the iteration count for the innermost loop is constant and small, full-unrolling of the innermost loop might make
+<strong>the index of the first dimension for the array reference to be the do-variable for the vectorized loop</strong>.</p>
+<p>As a result, array accesses become contiguous, the busy time for cache access decreases and it might lead to reduction of execution time.</p>
+</section>
+<section id="applied-example">
+<h2><span class="section-number">4.1.2. </span>Applied Example<a class="headerlink" href="#applied-example" title="Link to this heading">¶</a></h2>
+<p>Referring to an example presented in
+<a class="reference external" href="https://www.hpci-office.jp/en/events/symposia/meetings_A64FX">“Meetings for application code tuning on A64FX computer systems”</a>,
+performance improvement by applying this technique is shown below.
+In this example, an OCL of “fullunroll_pre_simd” was added to a loop for do-variable IP, which has non-contiguous references to an array F.</p>
+<div class="literal-block-wrapper docutils container" id="id1">
+<div class="code-block-caption"><span class="caption-text">Original</span><a class="headerlink" href="#id1" title="Link to this code">¶</a></div>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="c">!$OMP PARALLEL DO PRIVATE(FBUF)</span>
+<span class="w">  </span><span class="k">DO </span><span class="n">IG</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">NG3</span>
+<span class="w">     </span><span class="n">V1</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.D0</span>
+<span class="w">     </span><span class="n">V2</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.D0</span>
+<span class="w">     </span><span class="n">V3</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.D0</span>
+<span class="w">     </span><span class="n">V4</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.D0</span>
+<span class="w">     </span><span class="k">DO </span><span class="n">IP</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">15</span>
+<span class="w">        </span><span class="n">FBUF</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">F</span><span class="p">(</span><span class="n">IG</span><span class="p">,</span><span class="n">IP</span><span class="p">)</span>
+<span class="w">        </span><span class="n">V1</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">V1</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">FBUF</span>
+<span class="w">        </span><span class="n">V2</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">V2</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">FBUF</span><span class="o">*</span><span class="n">CVEL</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">IP</span><span class="p">)</span>
+<span class="w">        </span><span class="n">V3</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">V3</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">FBUF</span><span class="o">*</span><span class="n">CVEL</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="n">IP</span><span class="p">)</span>
+<span class="w">        </span><span class="n">V4</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">V4</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">FBUF</span><span class="o">*</span><span class="n">CVEL</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="n">IP</span><span class="p">)</span>
+<span class="w">     </span><span class="k">END DO</span>
+<span class="k">  END DO</span>
+</pre></div>
+</div>
+</div>
+<div class="literal-block-wrapper docutils container" id="id2">
+<div class="code-block-caption"><span class="caption-text">Technique applied</span><a class="headerlink" href="#id2" title="Link to this code">¶</a></div>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="c">!$OMP PARALLEL DO PRIVATE(FBUF)</span>
+<span class="w">  </span><span class="k">DO </span><span class="n">IG</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">NG3</span>
+<span class="w">     </span><span class="n">V1</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.D0</span>
+<span class="w">     </span><span class="n">V2</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.D0</span>
+<span class="w">     </span><span class="n">V3</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.D0</span>
+<span class="w">     </span><span class="n">V4</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.D0</span>
+<span class="hll"><span class="c">!OCL FULLUNROLL_PRE_SIMD</span>
+</span><span class="w">     </span><span class="k">DO </span><span class="n">IP</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">15</span>
+<span class="w">        </span><span class="n">FBUF</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">F</span><span class="p">(</span><span class="n">IG</span><span class="p">,</span><span class="n">IP</span><span class="p">)</span>
+<span class="w">        </span><span class="n">V1</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">V1</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">FBUF</span>
+<span class="w">        </span><span class="n">V2</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">V2</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">FBUF</span><span class="o">*</span><span class="n">CVEL</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">IP</span><span class="p">)</span>
+<span class="w">        </span><span class="n">V3</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">V3</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">FBUF</span><span class="o">*</span><span class="n">CVEL</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="n">IP</span><span class="p">)</span>
+<span class="w">        </span><span class="n">V4</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">V4</span><span class="p">(</span><span class="n">IG</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">FBUF</span><span class="o">*</span><span class="n">CVEL</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="n">IP</span><span class="p">)</span>
+<span class="w">     </span><span class="k">END DO</span>
+<span class="k">  END DO</span>
+</pre></div>
+</div>
+</div>
+<p>Results of cycle accounting for executions before/after applying the technique are shown in graphs below.
+A parameter for the loop execution is as follows:</p>
+<blockquote>
+<div><p>NG3 = 131 <sup>3</sup></p>
+</div></blockquote>
+<p>Comparing the right graph for the technique applied to the left graph for the original, busy time for L1D cache access was reduced by half, waiting time for L1D cache access dropped dramatically and execution time was reduced by 70%.</p>
+<a class="reference internal image-reference" href="_images/ffx.29503716.0.png"><img alt="_images/ffx.29503716.0.png" src="_images/ffx.29503716.0.png" style="width: 49%;" /></a>
+<a class="reference internal image-reference" href="_images/ffx.29503716.1.png"><img alt="_images/ffx.29503716.1.png" src="_images/ffx.29503716.1.png" style="width: 49%;" /></a>
+</section>
+<section id="real-cases">
+<h2><span class="section-number">4.1.3. </span>Real Cases<a class="headerlink" href="#real-cases" title="Link to this heading">¶</a></h2>
+<p>Real cases related to this technique are presented in
+<a class="reference external" href="https://www.hpci-office.jp/en/events/symposia/meetings_A64FX">“Meetings for application code tuning on A64FX computer systems”</a>
+as follows:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.hpci-office.jp/documents/meeting_A64FX/220428/20220428_Performance_Tuning_on_Fugaku-tj-rev0.pdf#page=42">Performance tuning and analysis for the axhelm kernel in NeK5000/RS CFD codes</a></p></li>
+<li><p><a class="reference external" href="https://www.hpci-office.jp/documents/meeting_A64FX/220727/Examples_of_serial-code_opt_for_A64FX-RIST-20220725.pdf#page=14">Examples of serial-code optimization for A64FX processor cores</a></p></li>
+</ul>
+</section>
+<section id="references">
+<h2><span class="section-number">4.1.4. </span>References<a class="headerlink" href="#references" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/en/manuals/tcsds-1.2.37/lang/Fortran/j2ul-2558-01enz0.pdf#page=258">Fortran User’s Guide “9.1.1.4 Loop Unrolling”</a></p></li>
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/en/manuals/tcsds-1.2.37/lang/C/j2ul-2560-01enz0.pdf#page=62">C User’s Guide “3.2.4 Loop Unrolling”</a></p></li>
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/en/manuals/tcsds-1.2.37/lang/C++/j2ul-2561-01enz0.pdf#page=65">C++ User’s Guide “3.2.4 Loop Unrolling”</a></p></li>
+<li><p><a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/doc_root/en/programming_guides/Fortran_Programming_Guide.pdf#page=48">Programming Guide (Fortran) “FULLUNROLL_PRE_SIMD”</a></p></li>
+</ul>
+<p>Notice: Access rights for
+<a class="reference external" href="https://www.fugaku.r-ccs.riken.jp/en/">Fugaku User Portal</a>
+are required to read the above documents.</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">Table of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">1. Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simd.html">2. Promoting Vectorization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="calcwait.html">3. Reduction of Waiting Time for Calculation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="cachewait.html">4. Reduction of Waiting Time for Cache Access</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">4.1. Full-Unrolling of Innermost Loop with Non-Contiguous Data Access</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cachewait-soa.html">4.2. Interchange of Array Dimension for AoS Layout</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cachewait-contiguous.html">4.3. Specifying CONTIGUOUS Attribute to Array Pointer</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="summary.html">5. Summary</a></li>
+</ul>
+
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="cachewait.html"
+                          title="previous chapter"><span class="section-number">4. </span>Reduction of Waiting Time for Cache Access</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="cachewait-soa.html"
+                          title="next chapter"><span class="section-number">4.2. </span>Interchange of Array Dimension for AoS Layout</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="cachewait-soa.html" title="4.2. Interchange of Array Dimension for AoS Layout"
+             >next</a></li>
+        <li class="right" >
+          <a href="cachewait.html" title="4. Reduction of Waiting Time for Cache Access"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Documentation of Tuning Techniques for A64FX Processors</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="cachewait.html" ><span class="section-number">4. </span>Reduction of Waiting Time for Cache Access</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><span class="section-number">4.1. </span>Full-Unrolling of Innermost Loop with Non-Contiguous Data Access</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2023, RIKEN Center for Computational Science.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>
